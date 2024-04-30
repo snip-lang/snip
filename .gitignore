@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 *.swp
 *.*~
 project.lock.json
@@ -36,3 +37,7 @@ msbuild.wrn
 # Visual Studio 2015
 .vs/
 
+=======
+snip
+Session.vim
+>>>>>>> 401f1fa (clean: clean up)
