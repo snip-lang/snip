@@ -8,7 +8,10 @@ enum class Token {
   IF,
   ELSE,
   ELIF,
+  INT, 
+  DOUBLE,
   FUNCTION,
+  STRING,
   CHARK,
   INTK,
   STRINGK,
@@ -33,7 +36,7 @@ enum class Token {
   OR,
   NOT,
   IDENTIFIER,
-  ILLEGAL, 
+  INVALID, 
   NONE
 };
 
@@ -50,9 +53,8 @@ public:
 private:
   std::string_view input;
   int ptr = 0;
-  int next_ptr = 1;
   char cur_char = 0;
-  int line_number = 0;
+  int line_number = 0; // to be used in the future 
   int len;
   int num_tokens = 0;
   std::string char_stack; 
