@@ -25,7 +25,7 @@ enum class State : short {
   DOUBLE_3,
   DOUBLE_4,
   DOUBLE_5,
-  BOOL_1,
+  BOOLK_1,
   BOOL_2,
   BOOL_3,
   BOOL_4,
@@ -36,7 +36,7 @@ enum class State : short {
   WHILE_5,
   FUNCTION_1,
   FUNCTION_2,
-  STRING_1,
+  STRINGK_1,
   STRING_2,
   STRING_3,
   CHAR_1,
@@ -44,8 +44,9 @@ enum class State : short {
   CHAR_3,
   CHAR_4,
   AND_1,
-  AND_2,
-  AND_3,
+  ANDK_1,
+  ANDK_2,
+  ANDK_3,
   OR_1,
   OR_2,
   GE_1,
@@ -59,16 +60,71 @@ enum class State : short {
   NOTEQUAL_1,
   NOTEQUAL_2,
   ASSIGN_1,
+  NOTK_1,
+  NOTK_2,
+  NOTK_3,
   NOT_1,
-  NOT_2,
-  NOT_3,
   LEFTBRACE_1,
   RIGHTBRACE_1,
   LEFTPARANTHESIS_1,
   RIGHTPARANTHESIS_1,
   PERIOD_1,
   COMMA_1,
+  IDENTIFIER,
+  INVALID,
 };
+
+State get_initial_state(char c) {
+  switch (c) {
+  case '_':
+  case '-':
+    return State::IDENTIFIER;
+    break;
+  case 'i':
+    return State::IF_1;
+    break;
+  case 'e':
+    return State::ELSE_1;
+    break;
+  case 'w':
+    return State::WHILE_1;
+  case 's':
+    return State::STRINGK_1;
+  case 'b':
+    return State::BOOLK_1;
+  case 'f':
+    return State::FUNCTION_1;
+  case 'c':
+    return State::CHAR_1;
+  case '&':
+    return State::AND_1;
+  case '{':
+    return State::LEFTBRACE_1;
+    break;
+  case '}':
+    return State::RIGHTBRACE_1;
+    break;
+  case '(':
+    return State::LEFTPARANTHESIS_1;
+    break;
+  case ')':
+    return State::RIGHTPARANTHESIS_1;
+    break;
+  case '.':
+    return State::PERIOD_1;
+    break;
+  case ',':
+    return State::COMMA_1;
+    break;
+  case '=':
+    return State::EQUAL_1;
+  case '!':
+    return State::NOT_1;
+  default:
+    if (isalpha(c)) return State::IDENTIFIER; 
+    return State::INVALID;
+  }
+}
 
 bool isSpace(char c) noexcept {
   switch (c) {
@@ -139,6 +195,18 @@ void Lexer::read_next() {
 }
 
 Token Lexer::get_token() {
+  //
+  // i++;
+  // while (i < char_stack_len &&
+  //        (std::isalnum(this->char_stack[i]) || this->char_stack[i] == '-' ||
+  //         this->char_stack[i] == '_')) {
+  //   i++;
+  // }
+  // if (this->char_stack[i] == '\0') {
+  //   return Token::IDENTIFIER;
+  // } else {
+  //   return Token::INVALID;
+  // }
   // only called when char_stack has a length of atleast one
   int i = 0;
   int char_stack_len = this->char_stack.length();
@@ -162,79 +230,5 @@ Token Lexer::get_token() {
     }
     Token retToken;
     State currentState;
-    switch (this->char_stack[i]) {
-    default:
-
-      break;
-    }
   }
-
-  void lexan() {
-    int ind = 0;
-    std::string line;
-    std::string currentToken;
-    Token retToken;
-    while (1) {
-      if (isSpace(line[ind]) || isComment(line[ind])) {
-        // check if we need to register a token since a whitespace or a comment
-        // has been encountered
-        if (currentToken != "") {
-          // check for different "regexes", then push them into the token list
-          if (currentToken == "if") {
-            retToken = Token::IF;
-          } else if (currentToken == "else") {
-            retToken = Token::ELSE;
-          } else if (currentToken == "elif") {
-            retToken = Token::ELIF;
-          } else if (currentToken == "fn") {
-            retToken = Token::FUNCTION;
-          } else if (currentToken == "char") {
-            retToken = Token::CHARK;
-          } else if (currentToken == "string") {
-            retToken = Token::STRINGK;
-          } else if (currentToken == "bool") {
-            retToken = Token::BOOLK;
-          } else if (currentToken == "while") {
-            retToken = Token::WHILE;
-          } else {
-            // check for literal
-            int length = currentToken.length();
-            if (length == 1) {
-              switch (currentToken[0]) {
-              case '(':
-                retToken = Token::RIGHTPARENTHESIS;
-              case ')':
-                retToken = Token::LEFTPARENTHESIS;
-              case '[':
-                retToken = Token::LEFTBRACKET;
-              case ']':
-                retToken = Token::RIGHTBRACKET;
-              case '{':
-                retToken = Token::LEFTBRACE;
-              case '}':
-                retToken = Token::RIGHTBRACE;
-              case '.':
-                retToken = Token::PERIOD;
-              case ',':
-                retToken = Token::COMMA;
-              default:
-                break;
-              }
-            }
-            if (length >= 2) {
-              // run loop to check for regexes
-              // EQUALITY = r'\=='
-              // ASSIGN = r'\='
-              // INEQUALITY = r'\!='
-              // LESSTHANEQ = r'<='
-              // GREATERTHANEQ = r'>='
-              // LESSTHAN = r'<'
-              // GREATERTHAN = r">"
-              // DOUBLE = r'[-|+]?[0-9]+\.(E[-|+]?[0-9]+)?'
-              // INTEGER = r'[-|+]?[0-9]+'
-            }
-          }
-        }
-      }
-    }
-  }
+}
