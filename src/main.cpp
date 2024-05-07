@@ -1,27 +1,27 @@
-#include <iostream>
 #include "lexer.h"
 #include <fstream>
+#include <iostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
-int main (int argc, char *argv[]) {
-  std::string filename = "input.snip"; 
-  if (argc == 1) {
-    filename = "input.snip"; 
+std::string readFile(const std::string &filename) {
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    std::cerr << "Unable to open source file" << std::endl;
   }
-  std::ifstream ifile(filename);   
-  if (!ifile.is_open()) {
-    std::cerr << "Unable to open file" << std::endl; 
-    return -1; 
-  }
-  std::string line; 
-  std::vector<std::string> lines; 
-  while (std::getline(ifile, line)) {
-    lines.push_back(line);
-    std::cout << line << std::endl;
-  }
-  ifile.close(); 
+  std::string source((std::istreambuf_iterator<char>(file)),
+                     std::istreambuf_iterator<char>());
+  file.close();
+  return source;
+}
 
+int main(int argc, char *argv[]) {
+  std::string filename = "input.snip"; // default filename
+  if (argc == 1) {
+    filename = argv[0];
+  }
+  std::string lines = readFile(filename);
   Lexer lex(lines);
   return 0;
 }
