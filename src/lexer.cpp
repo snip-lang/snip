@@ -98,24 +98,6 @@ State get_initial_state(char c) {
     return State::CHAR_1;
   case '&':
     return State::AND_1;
-  case '{':
-    return State::LEFTBRACE_1;
-    break;
-  case '}':
-    return State::RIGHTBRACE_1;
-    break;
-  case '(':
-    return State::LEFTPARANTHESIS_1;
-    break;
-  case ')':
-    return State::RIGHTPARANTHESIS_1;
-    break;
-  case '.':
-    return State::PERIOD_1;
-    break;
-  case ',':
-    return State::COMMA_1;
-    break;
   case '=':
     return State::EQUAL_1;
   case '!':
@@ -150,15 +132,13 @@ struct token_node {
 };
 
 // NOTE: the tokens are inserted in reverse order
-void insert_into_linked_list(token_node *&head, Token tok, std::string value) {
+void insert_into_linked_list(token_node *&head, Token tok) {
   token_node *new_node = new token_node();
-  new_node->value = value;
   new_node->tok = tok;
   token_node *temp = head;
   new_node->next = temp;
   head = new_node;
 }
-
 
 // take in a string_view and use that to lex the file
 Lexer::Lexer(std::string_view input) {
@@ -174,25 +154,132 @@ Lexer::Lexer(std::string_view input) {
 }
 
 void Lexer::tokenize() {
-  token_node* head = nullptr;
+  // calls read_next to update ptr values
+  token_node *head = nullptr;
+  // call get_token when a literal
+
+  int i = 0;
+  while (i < this->len) {
+    if (this->next_ptr >= this->len) { // reached EOF
+      this->char_stack[this->next_ptr] = '\0';
+      const Token token = get_token();
+      insert_into_linked_list(head, token);
+      this->char_stack[0] = ' '; // reset
+      // TODO handle stuff to transfer tokens to unique ptr
+    } else {
+      this->cur_char = this->input[this->ptr];
+      if (this->cur_char == ' ' || this->cur_char == '\t' ||
+          this->cur_char == '\n') {
+        // when a whitespace is encountered, check if there is a token on the
+        // char stack, then make a new token NOTE: this condition requires that
+        // the first element is reset to ' ' when a new token is added
+        if (this->char_stack[0] != ' ') {
+          this->char_stack[this->next_ptr] = '\0';
+          Token returnToken = get_token();
+          // TODO actually insert the tokens 
+          i++;
+          this->read_next();
+          this->char_stack[0] = ' '; // reset
+        } else {
+          i++; // consecutive whitespace, encountered, ignore whitespace
+          this->read_next();
+        }
+      } else {
+        // check if any literals are on the next element, and if so, get_token,
+        // also insert the literal's token into the list
+        // if the next element is not a literal, just keep going
+        Token returnToken;
+        switch (this->input[this->next_ptr]) {
+        case '{':
+          this->char_stack[this->next_ptr] = '\0';
+          returnToken = get_token();
+          this->char_stack[0] = ' '; // reset
+          insert_into_linked_list(head, returnToken);
+          returnToken = Token::LEFTBRACE;
+          insert_into_linked_list(head, returnToken);
+          i += 2;
+          read_next();
+          read_next();
+          break;
+        case '}':
+          this->char_stack[this->next_ptr] = '\0';
+          returnToken = get_token();
+          this->char_stack[0] = ' '; // reset
+          insert_into_linked_list(head, returnToken);
+          returnToken = Token::RIGHTBRACE;
+          insert_into_linked_list(head, returnToken);
+          i += 2;
+          read_next();
+          read_next();
+          break;
+        case '(':
+          this->char_stack[this->next_ptr] = '\0';
+          returnToken = get_token();
+          this->char_stack[0] = ' '; // reset
+          insert_into_linked_list(head, returnToken);
+          returnToken = Token::LEFTPARENTHESIS;
+          insert_into_linked_list(head, returnToken);
+          i += 2;
+          read_next();
+          read_next();
+          break;
+        case ')':
+          this->char_stack[this->next_ptr] = '\0';
+          returnToken = get_token();
+          this->char_stack[0] = ' '; // reset
+          insert_into_linked_list(head, returnToken);
+          returnToken = Token::RIGHTPARENTHESIS;
+          insert_into_linked_list(head, returnToken);
+          i += 2;
+          read_next();
+          read_next();
+          break;
+        case '.':
+          this->char_stack[this->next_ptr] = '\0';
+          insert_into_linked_list(head, returnToken);
+          returnToken = Token::PERIOD;
+          insert_into_linked_list(head, returnToken);
+          i += 2;
+          read_next();
+          read_next();
+          break;
+        case ',':
+          this->char_stack[this->next_ptr] = '\0';
+          insert_into_linked_list(head, returnToken);
+          returnToken = Token::COMMA;
+          insert_into_linked_list(head, returnToken);
+          i += 2;
+          read_next();
+          read_next();
+          break;
+        default:
+          i++;
+          this->read_next();
+          break;
+        }
+      }
+    }
+    // TODO actually return something
+  }
 }
- 
+
 void Lexer::read_next() {
   // to be used with finite automaton that quits on space
-  // should not be called once EOF is reached 
+  // should not be called once EOF is reached
   if (this->ptr >= this->len) {
     this->char_stack[this->ptr] = '\0';
   }
   this->cur_char = this->input[this->ptr];
-  this->ptr ++; 
-  this->next_ptr++; 
+  this->ptr++;
+  this->next_ptr++;
 }
 
 Token Lexer::get_token() {
   //
   // i++;
   // while (i < char_stack_len &&
-  //        (std::isalnum(this->char_stack[i]) || this->char_stack[i] == '-' ||
+  //        (std::isalnum(this->char_stack[i]) || this->char_stack[i] == '-'
+  //        ||
   //         this->char_stack[i] == '_')) {
   //   i++;
   // }
@@ -203,7 +290,7 @@ Token Lexer::get_token() {
   // }
   // only called when char_stack has a length of atleast one
   int i = 0;
-  int char_stack_len = this->char_stack.length();
+  const int char_stack_len = this->char_stack.length();
   while (std::isdigit(this->char_stack[i])) {
     i++;
   }

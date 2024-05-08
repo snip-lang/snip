@@ -40,6 +40,21 @@ enum class Token {
   NONE
 };
 
+
+// TODO 
+union TokenValue {
+  int num; 
+  std::string val; 
+  char literal; 
+};
+// TODO 
+struct TokenChunk {
+  Token tok; 
+  TokenValue value;
+};
+
+
+
 class Lexer {
 public:
   Lexer() = default;
@@ -49,14 +64,16 @@ public:
   ~Lexer() = default;
   void read_next();
   Token get_token();
+  void tokenize();
 
 private:
   std::string_view input;
-  int ptr = 0;
-  char cur_char = 0;
-  int line_number = 0; // to be used in the future 
-  int len;
-  int num_tokens = 0;
+  int ptr{0};
+  int next_ptr{1}; 
+  char cur_char{0} ;
+  int line_number{0}; // to be used in the future 
+  int len{0};
+  int num_tokens{0};
   std::string char_stack; 
   std::unique_ptr<Token[]> token_stack;
 };
