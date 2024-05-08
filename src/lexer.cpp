@@ -1,6 +1,8 @@
 #include <cctype>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -9,6 +11,7 @@
 
 enum class State : short {
   START,
+  END,
   IF_1,
   IF_2,
   ELSE_1,
@@ -17,18 +20,19 @@ enum class State : short {
   ELSE_4,
   ELIF_3,
   ELIF_4,
-  INT_1,
-  INT_2,
-  INT_3,
-  DOUBLE_1,
-  DOUBLE_2,
-  DOUBLE_3,
-  DOUBLE_4,
-  DOUBLE_5,
+  INTK_1,
+  INTK_2,
+  INTK_3,
+  DOUBLEK_1,
+  DOUBLEK_2,
+  DOUBLEK_3,
+  DOUBLEK_4,
+  DOUBLEK_5,
+  DOUBLEK_6,
   BOOLK_1,
-  BOOL_2,
-  BOOL_3,
-  BOOL_4,
+  BOOLK_2,
+  BOOLK_3,
+  BOOLK_4,
   WHILE_1,
   WHILE_2,
   WHILE_3,
@@ -37,13 +41,15 @@ enum class State : short {
   FUNCTION_1,
   FUNCTION_2,
   STRINGK_1,
-  STRING_2,
-  STRING_3,
-  CHAR_1,
-  CHAR_2,
-  CHAR_3,
-  CHAR_4,
+  STRINGK_2,
+  STRINGK_3,
+  CHAR,
+  CHARK_1,
+  CHARK_2,
+  CHARK_3,
+  CHARK_4,
   AND_1,
+  AND_2,
   ANDK_1,
   ANDK_2,
   ANDK_3,
@@ -77,7 +83,6 @@ enum class State : short {
 State get_initial_state(char c) {
   switch (c) {
   case '_':
-  case '-':
     return State::IDENTIFIER;
     break;
   case 'i':
@@ -95,7 +100,7 @@ State get_initial_state(char c) {
   case 'f':
     return State::FUNCTION_1;
   case 'c':
-    return State::CHAR_1;
+    return State::CHARK_1;
   case '&':
     return State::AND_1;
   case '=':
@@ -105,7 +110,8 @@ State get_initial_state(char c) {
   default:
     if (isalpha(c))
       return State::IDENTIFIER;
-    return State::INVALID;
+    else
+      return State::INVALID;
   }
 }
 
@@ -128,16 +134,17 @@ bool isComment(char c) noexcept { return (c == '#'); }
 struct token_node {
   Token tok;
   std::string value;
-  token_node *next;
+  token_node *next = nullptr;
 };
 
 // NOTE: the tokens are inserted in reverse order
-void insert_into_linked_list(token_node *&head, Token tok) {
+int insert_into_linked_list(token_node *&head, Token tok, int num_tokens) {
   token_node *new_node = new token_node();
   new_node->tok = tok;
   token_node *temp = head;
   new_node->next = temp;
   head = new_node;
+  return num_tokens++;
 }
 
 // take in a string_view and use that to lex the file
@@ -153,19 +160,16 @@ Lexer::Lexer(std::string_view input) {
   }
 }
 
-void Lexer::tokenize() {
-  // calls read_next to update ptr values
+// calls read_next to update ptr values
+void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
   token_node *head = nullptr;
-  // call get_token when a literal
-
   int i = 0;
   while (i < this->len) {
     if (this->next_ptr >= this->len) { // reached EOF
       this->char_stack[this->next_ptr] = '\0';
       const Token token = get_token();
-      insert_into_linked_list(head, token);
+      insert_into_linked_list(head, token, this->num_tokens);
       this->char_stack[0] = ' '; // reset
-      // TODO handle stuff to transfer tokens to unique ptr
     } else {
       this->cur_char = this->input[this->ptr];
       if (this->cur_char == ' ' || this->cur_char == '\t' ||
@@ -176,7 +180,7 @@ void Lexer::tokenize() {
         if (this->char_stack[0] != ' ') {
           this->char_stack[this->next_ptr] = '\0';
           Token returnToken = get_token();
-          // TODO actually insert the tokens 
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           i++;
           this->read_next();
           this->char_stack[0] = ' '; // reset
@@ -194,9 +198,9 @@ void Lexer::tokenize() {
           this->char_stack[this->next_ptr] = '\0';
           returnToken = get_token();
           this->char_stack[0] = ' '; // reset
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           returnToken = Token::LEFTBRACE;
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           i += 2;
           read_next();
           read_next();
@@ -205,9 +209,9 @@ void Lexer::tokenize() {
           this->char_stack[this->next_ptr] = '\0';
           returnToken = get_token();
           this->char_stack[0] = ' '; // reset
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           returnToken = Token::RIGHTBRACE;
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           i += 2;
           read_next();
           read_next();
@@ -216,9 +220,9 @@ void Lexer::tokenize() {
           this->char_stack[this->next_ptr] = '\0';
           returnToken = get_token();
           this->char_stack[0] = ' '; // reset
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           returnToken = Token::LEFTPARENTHESIS;
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           i += 2;
           read_next();
           read_next();
@@ -227,27 +231,27 @@ void Lexer::tokenize() {
           this->char_stack[this->next_ptr] = '\0';
           returnToken = get_token();
           this->char_stack[0] = ' '; // reset
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           returnToken = Token::RIGHTPARENTHESIS;
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           i += 2;
           read_next();
           read_next();
           break;
         case '.':
           this->char_stack[this->next_ptr] = '\0';
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           returnToken = Token::PERIOD;
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           i += 2;
           read_next();
           read_next();
           break;
         case ',':
           this->char_stack[this->next_ptr] = '\0';
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           returnToken = Token::COMMA;
-          insert_into_linked_list(head, returnToken);
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           i += 2;
           read_next();
           read_next();
@@ -259,13 +263,22 @@ void Lexer::tokenize() {
         }
       }
     }
-    // TODO actually return something
   }
+  token_stack = std::make_unique<Token[]>(this->num_tokens+1 );
+  //  move the tokens from head to the token_stack
+  token_node *temp = head;
+  token_stack[this->num_tokens] = Token::END;
+  for (int i = this->num_tokens-1; i >= 0; i--) {
+    token_stack[i] = (*temp).tok;
+    temp = temp->next;
+    delete temp;
+  }
+  head = nullptr;
 }
 
 void Lexer::read_next() {
-  // to be used with finite automaton that quits on space
-  // should not be called once EOF is reached
+  std::cout << this->input[this->ptr] << std::endl;
+  // NOTE: should not be called once EOF is reached
   if (this->ptr >= this->len) {
     this->char_stack[this->ptr] = '\0';
   }
@@ -275,20 +288,7 @@ void Lexer::read_next() {
 }
 
 Token Lexer::get_token() {
-  //
-  // i++;
-  // while (i < char_stack_len &&
-  //        (std::isalnum(this->char_stack[i]) || this->char_stack[i] == '-'
-  //        ||
-  //         this->char_stack[i] == '_')) {
-  //   i++;
-  // }
-  // if (this->char_stack[i] == '\0') {
-  //   return Token::IDENTIFIER;
-  // } else {
-  //   return Token::INVALID;
-  // }
-  // only called when char_stack has a length of atleast one
+  // NOTE: only called when char_stack has a length of atleast one
   int i = 0;
   const int char_stack_len = this->char_stack.length();
   while (std::isdigit(this->char_stack[i])) {
@@ -310,12 +310,292 @@ Token Lexer::get_token() {
   }
   Token retToken;
   State currentState{get_initial_state(this->char_stack[i])};
-  i++;
+  i++; // increment before while because all literals are lexed before this
+       // statement
+  // so the token is atleast two chars long
   while (i < char_stack_len) {
     switch (currentState) {
+    // ([a-z][A-z][0-9]|_)*
+    case State::IDENTIFIER:
+      retToken = Token::IDENTIFIER;
+      while (i < char_stack_len) {
+        if (!(isalnum(this->char_stack[i]) || this->char_stack[i] == '_')) {
+          retToken = Token::INVALID;
+        }
+      }
+      break;
+    // &&
+    case State::ANDK_1:
+      if (this->char_stack[i] == '&') {
+        currentState = State::OR_2;
+        i++;
+      } else
+        retToken = Token::INVALID;
+      break;
+    // || 
+    case State::OR_1:
+      if (this->char_stack[i] == '|') {
+        currentState = State::OR_2;
+        i++;
+      } else
+        retToken = Token::INVALID;
+      break;
+    case State::OR_2:
+      if (i == char_stack_len) {
+        currentState = State::END;
+        retToken = Token::IF;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+        // i++ handled in identifier case
+      }
+      break;
+    case State::IF_1:
+      if (this->char_stack[i] == 'f') {
+        currentState = State::IF_2;
+        i++;
+      } else if (this->char_stack[i] == 'n') {
+        currentState = State::INTK_2;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::IF_2:
+      if (i == char_stack_len) {
+        currentState = State::END;
+        retToken = Token::IF;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+        // i++ handled in identifier case
+      }
+      break;
+    case State::INTK_2:
+      if (this->char_stack[i] == 't') {
+        currentState = State::INTK_2;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::INTK_3:
+      if (this->char_stack[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::IF;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::DOUBLEK_1:
+      if (this->char_stack[i] == 'o') {
+        currentState = State::DOUBLEK_2;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::DOUBLEK_3:
+      if (this->char_stack[i] == 'b') {
+        currentState = State::DOUBLEK_4;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::DOUBLEK_4:
+      if (this->char_stack[i] == 'l') {
+        currentState = State::DOUBLEK_5;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::DOUBLEK_5:
+      if (this->char_stack[i] == 'e') {
+        currentState = State::DOUBLEK_6;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::DOUBLEK_6:
+      if (this->char_stack[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::DOUBLEK;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::BOOLK_1:
+      if (this->char_stack[i] == 'o') {
+        currentState = State::BOOLK_2;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::BOOLK_2:
+      if (this->char_stack[i] == 'o') {
+        currentState = State::BOOLK_3;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::BOOLK_3:
+      if (this->char_stack[i] == 'l') {
+        currentState = State::BOOLK_4;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::BOOLK_4:
+      if (this->char_stack[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::DOUBLEK;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::WHILE_1:
+      if (this->char_stack[i] == 'h') {
+        currentState = State::WHILE_2;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::WHILE_2:
+      if (this->char_stack[i] == 'i') {
+        currentState = State::WHILE_3;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::WHILE_3:
+      if (this->char_stack[i] == 'l') {
+        currentState = State::WHILE_4;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::WHILE_4:
+      if (this->char_stack[i] == 'e') {
+        currentState = State::WHILE_5;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::WHILE_5:
+      if (this->char_stack[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::WHILE;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+    case State::FUNCTION_1:
+      if (this->char_stack[i] == 'n') {
+        currentState = State::FUNCTION_2;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::FUNCTION_2:
+      if (this->char_stack[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::FUNCTION;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::STRINGK_1:
+      if (this->char_stack[i] == 't') {
+        currentState = State::STRINGK_2;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::STRINGK_2:
+      if (this->char_stack[i] == 'r') {
+        currentState = State::STRINGK_3;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::STRINGK_3:
+      if (this->char_stack[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::STRINGK;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::AND_1:
+      if (this->char_stack[i] == '&') {
+        currentState = State::AND_2;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::AND_2:
+      if (this->char_stack[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::AND;
+        i--;
+      } else {
+        currentState = State::INVALID;
+      }
+      break;
+    case State::EQUAL_1:
+      if (this->char_stack[i] == '=') {
+        currentState = State::EQUAL_2;
+      } else if (this->char_stack[i] == '\0') {
+        i--;
+        retToken = Token::ASSIGN;
+        currentState = State::END;
+      } else {
+        i--;
+        retToken = Token::UNDEFINED;
+        currentState = State::END;
+      }
+      break;
+    case State::NOT_1:
+      if (this->char_stack[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::NOT;
+      } else if (this->char_stack[i] == '=') {
+        currentState = State::NOTEQUAL_2;
+        i++;
+      } else {
+        currentState = State::END;
+        retToken = Token::UNDEFINED;
+        i--;
+      }
+      break;
+    case State::END:
+      std::cout << "Token Found: " << std::endl;
+      if (retToken == Token::UNDEFINED) {
+        std::cerr << "Undefined behavior" << std::endl;
+        std::exit(-10);
+      }
+      return retToken;
+      break;
     default:
-
       break;
     }
   }
+  std::cout << "Did not finish lexing " << std::endl;
+  std::cout << "Aborting" << std::endl;
+  std::exit(-11);
 }

@@ -5,11 +5,13 @@
 #ifndef LEXER
 
 enum class Token {
+  UNDEFINED,
   IF,
   ELSE,
   ELIF,
   INT, 
   DOUBLE,
+  DOUBLEK,
   FUNCTION,
   STRING,
   CHARK,
@@ -37,17 +39,18 @@ enum class Token {
   NOT,
   IDENTIFIER,
   INVALID, 
-  NONE
+  NONE,
+  END, 
 };
 
 
-// TODO 
+// TODO: 
 union TokenValue {
   int num; 
   std::string val; 
   char literal; 
 };
-// TODO 
+// TODO:
 struct TokenChunk {
   Token tok; 
   TokenValue value;
@@ -64,7 +67,7 @@ public:
   ~Lexer() = default;
   void read_next();
   Token get_token();
-  void tokenize();
+  void tokenize( std::unique_ptr<Token[]>& token_stack);
 
 private:
   std::string_view input;
@@ -75,7 +78,6 @@ private:
   int len{0};
   int num_tokens{0};
   std::string char_stack; 
-  std::unique_ptr<Token[]> token_stack;
 };
 
 #endif
