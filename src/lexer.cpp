@@ -121,7 +121,8 @@ State get_initial_state(char c) {
   case '!':
     return State::NOT_1;
   default:
-    if (isalpha(c)) return State::IDENTIFIER; 
+    if (isalpha(c))
+      return State::IDENTIFIER;
     return State::INVALID;
   }
 }
@@ -158,6 +159,7 @@ void insert_into_linked_list(token_node *&head, Token tok, std::string value) {
   head = new_node;
 }
 
+
 // take in a string_view and use that to lex the file
 Lexer::Lexer(std::string_view input) {
   if (input.empty()) {
@@ -171,27 +173,19 @@ Lexer::Lexer(std::string_view input) {
   }
 }
 
+void Lexer::tokenize() {
+  token_node* head = nullptr;
+}
+ 
 void Lexer::read_next() {
   // to be used with finite automaton that quits on space
+  // should not be called once EOF is reached 
   if (this->ptr >= this->len) {
     this->char_stack[this->ptr] = '\0';
-    get_token();
   }
   this->cur_char = this->input[this->ptr];
-
-  if (this->cur_char == ' ') {
-    // check if there is a token on the char stack, then make a new token
-    // NOTE: this condition requires that the first element is reset to ' '
-    // when a new token is added
-    if (this->char_stack[0] != ' ') {
-      this->char_stack[this->ptr] = this->cur_char;
-      this->ptr++;
-    }
-  } else {
-    // get the token type value on the char_stack
-    this->char_stack[this->ptr] = '\0';
-    get_token();
-  }
+  this->ptr ++; 
+  this->next_ptr++; 
 }
 
 Token Lexer::get_token() {
@@ -210,25 +204,31 @@ Token Lexer::get_token() {
   // only called when char_stack has a length of atleast one
   int i = 0;
   int char_stack_len = this->char_stack.length();
-  while (i < char_stack_len) {
+  while (std::isdigit(this->char_stack[i])) {
+    i++;
+  }
+  if (this->char_stack[i] == '\0') {
+    return Token::INT;
+  } else if (this->char_stack[i] == '.') {
     while (std::isdigit(this->char_stack[i])) {
       i++;
     }
     if (this->char_stack[i] == '\0') {
-      return Token::INT;
-    } else if (this->char_stack[i] == '.') {
-      while (std::isdigit(this->char_stack[i])) {
-        i++;
-      }
-      if (this->char_stack[i] == '\0') {
-        return Token::DOUBLE;
-      }
+      return Token::DOUBLE;
     }
-    if (i != 0) {
-      // neither float nor string, but starts with a digit
-      return Token::INVALID;
+  }
+  if (i != 0) {
+    // neither float nor string, but starts with a digit
+    return Token::INVALID;
+  }
+  Token retToken;
+  State currentState{get_initial_state(this->char_stack[i])};
+  i++;
+  while (i < char_stack_len) {
+    switch (currentState) {
+    default:
+
+      break;
     }
-    Token retToken;
-    State currentState;
   }
 }
