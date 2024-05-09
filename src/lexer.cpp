@@ -346,6 +346,7 @@ Token Lexer::get_token() {
   }
   Token retToken;
   State currentState{get_initial_state(this->current_token[i])};
+  i++; // increment before while because all literals are lexed before this
   // statement so the token is atleast two chars long
   while (i <= char_stack_len) {
     switch (currentState) {
@@ -358,9 +359,8 @@ Token Lexer::get_token() {
           retToken = Token::INVALID;
         }
       }
+      currentState = State::END; 
       break;
-
-    // &&
     case State::ANDK_1:
       if (this->current_token[i] == '&') {
         currentState = State::OR_2;
@@ -368,7 +368,6 @@ Token Lexer::get_token() {
       } else
         retToken = Token::INVALID;
       break;
-    // ||
     case State::OR_1:
       if (this->current_token[i] == '|') {
         currentState = State::OR_2;
@@ -557,6 +556,7 @@ Token Lexer::get_token() {
     case State::STRINGK_1:
       if (this->current_token[i] == 't') {
         currentState = State::STRINGK_2;
+        i++;
       } else {
         currentState = State::IDENTIFIER;
       }
@@ -564,6 +564,7 @@ Token Lexer::get_token() {
     case State::STRINGK_2:
       if (this->current_token[i] == 'r') {
         currentState = State::STRINGK_3;
+        i++;
       } else {
         currentState = State::IDENTIFIER;
       }
@@ -572,6 +573,39 @@ Token Lexer::get_token() {
       if (this->current_token[i] == '\0') {
         currentState = State::END;
         retToken = Token::STRINGK;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::CHARK_1:
+      if (this->current_token[i] == 'h') {
+        currentState = State::CHARK_2;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::CHARK_2:
+      if (this->current_token[i] == 'a') {
+        currentState = State::CHARK_3;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::CHARK_3:
+      if (this->current_token[i] == 'r') {
+        currentState = State::CHARK_4;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::CHARK_4:
+      if (this->current_token[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::CHARK;
         i--;
       } else {
         currentState = State::IDENTIFIER;
