@@ -138,7 +138,7 @@ struct token_node {
 };
 
 // NOTE: the tokens are inserted in reverse order
-int insert_into_linked_list(token_node *&head, Token tok, int num_tokens) {
+int insert_into_linked_list(token_node *&head, Token tok, int &num_tokens) {
   token_node *new_node = new token_node();
   new_node->tok = tok;
   token_node *temp = head;
@@ -173,7 +173,7 @@ void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
       }
       std::cout << "Reached EOF";
       this->current_token.clear(); // reset
-      this->current_token_ptr = 0; 
+      this->current_token_ptr = 0;
       i++;
     }
 
@@ -203,9 +203,10 @@ void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
         if (!this->current_token.empty()) {
           std::cout << "DEBUG: token is not empty" << std::endl;
           this->current_token[this->current_token_ptr] = '\0';
-          Token returnToken = get_token(); insert_into_linked_list(head, returnToken, this->num_tokens);
+          Token returnToken = get_token();
+          insert_into_linked_list(head, returnToken, this->num_tokens);
           this->current_token.clear();
-          this->current_token_ptr = 0; 
+          this->current_token_ptr = 0;
         }
         i++;
         this->read_next();
@@ -249,7 +250,7 @@ void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
           this->current_token[this->next_ptr] = '\0';
           returnToken = get_token();
           this->current_token.clear();
-            this->current_token_ptr = 0; 
+          this->current_token_ptr = 0;
           insert_into_linked_list(head, returnToken, this->num_tokens);
           returnToken = Token::RIGHTPARENTHESIS;
           insert_into_linked_list(head, returnToken, this->num_tokens);
@@ -288,14 +289,18 @@ void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
       }
     }
   }
-  token_stack = std::make_unique<Token[]>(this->num_tokens + 1);
+  token_stack = std::make_unique<Token[]>(this->num_tokens + 0);
   //  move the tokens from head to the token_stack
-  token_node *temp = head;
   token_stack[this->num_tokens] = Token::END;
   for (int i = this->num_tokens - 1; i >= 0; i--) {
-    token_stack[i] = (*temp).tok;
-    temp = temp->next;
-    delete temp;
+    std::cout << i << std::endl;
+    if (head != nullptr) {
+      token_node *temp;
+      temp = head;
+      token_stack[i] = (*head).tok;
+      head = head->next;
+      delete temp;
+    }
   }
   head = nullptr;
 }
@@ -324,7 +329,6 @@ void Lexer::read_next(int count) {
 
 Token Lexer::get_token() {
   // NOTE: only called when char_stack has a length of atleast one
-  std::cout << "la h" << std::endl;
   int i = 0;
   const int char_stack_len = this->current_token.length();
   while (std::isdigit(this->current_token[i])) {
@@ -359,7 +363,7 @@ Token Lexer::get_token() {
           retToken = Token::INVALID;
         }
       }
-      currentState = State::END; 
+      currentState = State::END;
       break;
     case State::ANDK_1:
       if (this->current_token[i] == '&') {

@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
 
   while (token_stack[i] != Token::END) {
     std::cout << token_to_string(token_stack[i]) << std::endl;
+    i ++; 
   }
 
   return 0;
