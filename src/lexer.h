@@ -61,23 +61,23 @@ struct TokenChunk {
 class Lexer {
 public:
   Lexer() = default;
-  Lexer(std::string_view);
+  Lexer(std::string);
   Lexer(Lexer &&) = default;
-  Lexer &operator=(Lexer &&) = default;
-  ~Lexer() = default;
   void read_next();
+  void read_next(int);
   Token get_token();
   void tokenize( std::unique_ptr<Token[]>& token_stack);
 
 private:
-  std::string_view input;
+  std::string input;
   int ptr{0};
   int next_ptr{1}; 
-  char cur_char{0} ;
+  int current_token_ptr{0};
+  char current_char{0} ;
   int line_number{0}; // to be used in the future 
   int len{0};
   int num_tokens{0};
-  std::string char_stack; 
+  std::string current_token; 
 };
 
 #endif

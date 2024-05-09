@@ -96,12 +96,9 @@ std::string readFile(const std::string &filename) {
 
 int main(int argc, char *argv[]) {
   std::string filename = "input.snip"; // default filename
-  if (argc == 1) {
-    filename = argv[0];
-  }
   std::string lines = readFile(filename);
-  Lexer lex(lines);
   std::unique_ptr<Token[]> token_stack = nullptr; 
+  Lexer lex(lines);
   lex.tokenize(token_stack);
   int i{0};
 
