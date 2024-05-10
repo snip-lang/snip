@@ -383,17 +383,20 @@ void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
           read_next();
           break;
         default:
-          // capture strings starting with '"'
+          // capture strings starting with double quotes
           if (this->current_char == '"') {
-            this->current_token[this->current_token_ptr] = '\0';
-            insert_into_linked_list(head, retToken, this->num_tokens);
-            int start_string_ptr = this->ptr;
+            if (this->current_token_ptr > 0) {
+              this->current_token[this->current_token_ptr] = '\0';
+              insert_into_linked_list(head, retToken, this->num_tokens);
+            }
+            read_next();
+            i++;
             while (this->input[this->ptr] != '"') {
               read_next();
               i++;
             }
-            this->current_token =
-                this->input.substr(start_string_ptr, this->ptr);
+            retToken = (this->input[this->ptr] == '"') ? Token::STRING
+                                                       : Token::UNDEFINED;
             insert_into_linked_list(head, retToken, this->num_tokens);
             this->current_token[0] = '\0';
             this->current_token_ptr = 0;
@@ -405,9 +408,9 @@ void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
                   this->input.substr(this->ptr, this->ptr + 2);
               read_next(3);
               i += 3;
-                insert_into_linked_list(head, Token::CHAR, this->num_tokens);
-            this->current_token[0] = '\0';
-            this->current_token_ptr = 0;
+              insert_into_linked_list(head, Token::CHAR, this->num_tokens);
+              this->current_token[0] = '\0';
+              this->current_token_ptr = 0;
             } else {
               // error out since a char either too long or too short
               std::cout << "Expected expression for char at line "
@@ -497,7 +500,7 @@ Token Lexer::get_token() {
               this->current_token[i] == '_')) {
           retToken = Token::INVALID;
         }
-        i++; 
+        i++;
       }
       currentState = State::END;
       break;
