@@ -6,6 +6,7 @@
 
 enum class Token {
   UNDEFINED,
+  SEMICOLON,
   IF,
   ELSE,
   ELIF,
@@ -40,6 +41,10 @@ enum class Token {
   IDENTIFIER,
   INVALID, 
   NONE,
+  MULTIPLY, 
+  ADD, 
+  SUBTRACT, 
+  DIVIDE, 
   END, 
 };
 
@@ -63,8 +68,8 @@ public:
   Lexer() = default;
   Lexer(std::string);
   Lexer(Lexer &&) = default;
-  void read_next();
-  void read_next(int);
+  void read_next() noexcept;
+  void read_next(int) noexcept;
   Token get_token();
   void tokenize( std::unique_ptr<Token[]>& token_stack);
 
@@ -74,7 +79,7 @@ private:
   int next_ptr{1}; 
   int current_token_ptr{0};
   char current_char{0} ;
-  int line_number{0}; // to be used in the future 
+  int line_number{1}; 
   int len{0};
   int num_tokens{0};
   std::string current_token; 

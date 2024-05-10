@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -6,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-std::string token_to_string(Token tok) {
+std::string token_to_string(Token& tok) {
   switch (tok) {
   case Token::UNDEFINED:
     return "UNDEFINED";
@@ -66,6 +67,8 @@ std::string token_to_string(Token tok) {
     return "LESSTHANEQUAL";
   case Token::GREATERTHANEQUAL:
     return "GREATERTHANEQUAL";
+  case Token::SEMICOLON:
+    return "SEMICOLON";
   case Token::AND:
     return "AND";
   case Token::OR:
@@ -76,6 +79,8 @@ std::string token_to_string(Token tok) {
     return "IDENTIFIER";
   case Token::INVALID:
     return "INVALID";
+  case Token::END: 
+    exit(0);
   case Token::NONE:
     return "NONE";
   default:
@@ -96,13 +101,28 @@ std::string readFile(const std::string &filename) {
 
 int main(int argc, char *argv[]) {
   std::string filename = "input.snip"; // default filename
-  std::string lines = readFile(filename);
-  std::unique_ptr<Token[]> token_stack = nullptr; 
-  Lexer lex(lines);
-  lex.tokenize(token_stack);
-  int i{0};
+  std::string parseString = ""; 
+  if (argc == 2) { // input file 
+    filename = argv[1]; 
+  } else if (argc == 3 ) { // -e flag "string to lex"
+    if (std::strcmp(argv[1], "-e")) {
+      parseString = argv[2];
+    }
+  } 
 
+  std::unique_ptr<Token[]> token_stack = nullptr; 
+  if (parseString.empty()) {
+    std::string lines = readFile(filename);
+    Lexer lex(lines);
+    lex.tokenize(token_stack);
+  } else {
+    Lexer lex(parseString); 
+    lex.tokenize(token_stack);
+  }
+
+  int i{0};
   while (token_stack[i] != Token::END) {
+    std::string s  = token_to_string(token_stack[i]); 
     std::cout << token_to_string(token_stack[i]) << std::endl;
     i ++; 
   }
