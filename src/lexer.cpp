@@ -497,6 +497,7 @@ Token Lexer::get_token() {
               this->current_token[i] == '_')) {
           retToken = Token::INVALID;
         }
+        i++; 
       }
       currentState = State::END;
       break;

@@ -102,7 +102,7 @@ std::string readFile(const std::string &filename) {
 }
 
 int main(int argc, char *argv[]) {
-  std::string filename = "input.snip"; // default filename
+  std::string filename = "./tests/lexer.snip"; // default filename
   std::string parseString = "";
   if (argc == 2) { // input file
     filename = argv[1];
