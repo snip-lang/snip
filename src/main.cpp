@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-std::string token_to_string(Token& tok) {
+std::string token_to_string(Token &tok) {
   switch (tok) {
   case Token::UNDEFINED:
     return "UNDEFINED";
@@ -47,6 +47,8 @@ std::string token_to_string(Token& tok) {
     return "LEFTBRACKET";
   case Token::RIGHTBRACE:
     return "RIGHTBRACE";
+  case Token::CHAR:
+    return "CHAR";
   case Token::LEFTBRACE:
     return "LEFTBRACE";
   case Token::PERIOD:
@@ -57,9 +59,9 @@ std::string token_to_string(Token& tok) {
     return "EQUAL";
   case Token::NOTEQUAL:
     return "NOTEQUAL";
-    case Token::ASSIGN:
-      return "ASSIGN"; 
-    case Token::GREATERTHAN:
+  case Token::ASSIGN:
+    return "ASSIGN";
+  case Token::GREATERTHAN:
     return "GREATERTHAN";
   case Token::LESSERTHAN:
     return "LESSERTHAN";
@@ -79,7 +81,7 @@ std::string token_to_string(Token& tok) {
     return "IDENTIFIER";
   case Token::INVALID:
     return "INVALID";
-  case Token::END: 
+  case Token::END:
     exit(0);
   case Token::NONE:
     return "NONE";
@@ -101,31 +103,30 @@ std::string readFile(const std::string &filename) {
 
 int main(int argc, char *argv[]) {
   std::string filename = "input.snip"; // default filename
-  std::string parseString = ""; 
-  if (argc == 2) { // input file 
-    filename = argv[1]; 
-  } else if (argc == 3 ) { // -e flag "string to lex"
+  std::string parseString = "";
+  if (argc == 2) { // input file
+    filename = argv[1];
+  } else if (argc == 3) { // -e flag "string to lex"
     if (std::strcmp(argv[1], "-e")) {
       parseString = argv[2];
     }
-  } 
+  }
 
-  std::unique_ptr<Token[]> token_stack = nullptr; 
+  std::unique_ptr<Token[]> token_stack = nullptr;
   if (parseString.empty()) {
     std::string lines = readFile(filename);
     Lexer lex(lines);
     lex.tokenize(token_stack);
   } else {
-    Lexer lex(parseString); 
+    Lexer lex(parseString);
     lex.tokenize(token_stack);
   }
 
   int i{0};
   while (token_stack[i] != Token::END) {
-    std::string s  = token_to_string(token_stack[i]); 
+    std::string s = token_to_string(token_stack[i]);
     std::cout << token_to_string(token_stack[i]) << std::endl;
-    i ++; 
+    i++;
   }
-
   return 0;
 }

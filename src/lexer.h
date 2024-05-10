@@ -16,6 +16,7 @@ enum class Token {
   FUNCTION,
   STRING,
   CHARK,
+  CHAR,
   INTK,
   STRINGK,
   BOOLK,

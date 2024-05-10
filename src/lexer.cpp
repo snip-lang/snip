@@ -403,13 +403,17 @@ void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
             if (this->input[this->ptr + 2] == '\'') {
               this->current_token =
                   this->input.substr(this->ptr, this->ptr + 2);
-              read_next(2);
+              read_next(3);
               i += 3;
+                insert_into_linked_list(head, Token::CHAR, this->num_tokens);
+            this->current_token[0] = '\0';
+            this->current_token_ptr = 0;
+            } else {
+              // error out since a char either too long or too short
+              std::cout << "Expected expression for char at line "
+                        << this->line_number << std::endl;
+              std::exit(-12);
             }
-            // error out since a char either too long or too short
-            std::cout << "Expected expression for char at line "
-                      << this->line_number << std::endl;
-            std::exit(-12);
           } else [[likely]] {
             this->current_token[this->current_token_ptr] = this->current_char;
             this->current_token_ptr++;
