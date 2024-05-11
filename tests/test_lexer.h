@@ -10,6 +10,7 @@ public:
   TestCase(const std::string &, const std::string &,
            std::unique_ptr<Token[]> &);
   void checkResult() const;
+  void runTests() ;
 
 private:
   std::string name;
