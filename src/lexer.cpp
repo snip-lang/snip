@@ -10,6 +10,7 @@
 
 enum class State : short {
   START,
+  TRUEK_1,
   END,
   IF_1,
   IF_2,
@@ -87,6 +88,8 @@ State get_initial_state(char c) {
   case 'i':
     return State::IF_1;
     break;
+  case 't':
+    return State::TRUEK_1;
   case 'e':
     return State::ELSE_1;
     break;
@@ -544,6 +547,14 @@ Token Lexer::get_token() {
         currentState = State::IDENTIFIER;
       }
       break;
+    case State::TRUEK_1:
+      if (this->current_token[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::TRUEK;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
     case State::DOUBLEK_1:
       if (this->current_token[i] == 'o') {
         currentState = State::DOUBLEK_2;
@@ -612,7 +623,7 @@ Token Lexer::get_token() {
     case State::BOOLK_4:
       if (this->current_token[i] == '\0') {
         currentState = State::END;
-        retToken = Token::DOUBLEK;
+        retToken = Token::BOOLK;
         i--;
       } else {
         currentState = State::IDENTIFIER;
@@ -661,7 +672,10 @@ Token Lexer::get_token() {
     case State::FUNCTION_1:
       if (this->current_token[i] == 'n') {
         currentState = State::FUNCTION_2;
-        i++; 
+        i++;
+      } else if (this->current_token[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::FALSEK;
       } else {
         currentState = State::IDENTIFIER;
       }

@@ -2,7 +2,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <memory>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -79,6 +79,10 @@ std::string token_to_string(Token &tok) {
     return "NOT";
   case Token::IDENTIFIER:
     return "IDENTIFIER";
+  case Token::TRUEK:
+    return "TRUE";
+  case Token::FALSEK:
+    return "FALSE";
   case Token::INVALID:
     return "INVALID";
   case Token::END:
@@ -97,13 +101,23 @@ std::string readFile(const std::string &filename) {
   }
   std::string source((std::istreambuf_iterator<char>(file)),
                      std::istreambuf_iterator<char>());
+  // DEBUG:
+  std::cout << source << std::endl;
   file.close();
   return source;
 }
 
-int main(int argc, char *argv[]) {
-  std::string filename = "./tests/lexer.snip"; // default filename
-  std::string parseString = "";
+void writeFile(const std::string &filename, const std::stringstream &output) {
+  std::ofstream file(filename);
+  if (!file.is_open()) {
+    std::cerr << "Unable to open output file" << std::endl;
+  }
+  file << output.str();
+  file.close();
+}
+
+bool get_flags(const int &argc, char *argv[], std::string &filename,
+               std::string &parseString, std::string& test_string) {
   if (argc == 2) { // input file
     filename = argv[1];
   } else if (argc == 3) { // -e flag "string to lex"
@@ -111,22 +125,55 @@ int main(int argc, char *argv[]) {
       parseString = argv[2];
     }
   }
-
-  std::unique_ptr<Token[]> token_stack = nullptr;
-  if (parseString.empty()) {
-    std::string lines = readFile(filename);
-    Lexer lex(lines);
-    lex.tokenize(token_stack);
-  } else {
-    Lexer lex(parseString);
-    lex.tokenize(token_stack);
+  int ind = 0;
+  char *currentFlag;
+  char *currentOption;
+  bool isTest{false};
+  for (int count{0}; count < argc; count++) {
+    if (count % 2) {
+      currentFlag = argv[count];
+    }
+    else {
+      if (strcmp(currentFlag, "-e") == 0 ) {
+        parseString = argv[count];
+      } else if (strcmp(currentFlag, "-t") == 0) {
+        isTest = true;
+        test_string = argv[count];
+      } else {
+        filename = argv[count];
+      }
+    }
   }
+  return isTest;
+}
 
-  int i{0};
-  while (token_stack[i] != Token::END) {
-    std::string s = token_to_string(token_stack[i]);
-    std::cout << token_to_string(token_stack[i]) << std::endl;
-    i++;
+int main(int argc, char *argv[]) {
+  std::string filename = "./tests/lexer.snip"; // default filename
+  std::string test_filename = "output.txt";
+  std::string parse_string = "";
+  bool isTest = get_flags(argc, argv, filename, parse_string, test_filename);
+  std::unique_ptr<Token[]> token_stack = nullptr;
+  std::string lines = readFile(filename);
+  Lexer lex((parse_string.empty() ? lines : parse_string));
+  lex.tokenize(token_stack);
+
+  if (isTest) {
+    std::stringstream ss; 
+    int i{0};
+    while (token_stack[i] != Token::END) {
+      std::string s = token_to_string(token_stack[i]);
+      ss << token_to_string(token_stack[i]) << std::endl;
+      i++;
+    }
+    #include "../tests/test_lexer.h"
+    writeFile(test_filename,ss);
+  } else {
+    int i{0};
+    while (token_stack[i] != Token::END) {
+      std::string s = token_to_string(token_stack[i]);
+      std::cout << token_to_string(token_stack[i]) << std::endl;
+      i++;
+    }
   }
   return 0;
 }

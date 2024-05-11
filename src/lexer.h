@@ -2,75 +2,15 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "globals.h"
+
 #ifndef LEXER
 
-enum class Token {
-  UNDEFINED,
-  SEMICOLON,
-  IF,
-  ELSE,
-  ELIF,
-  INT, 
-  DOUBLE,
-  DOUBLEK,
-  FUNCTION,
-  STRING,
-  CHARK,
-  CHAR,
-  INTK,
-  STRINGK,
-  BOOLK,
-  WHILE,
-  RIGHTPARENTHESIS,
-  LEFTPARENTHESIS,
-  RIGHTBRACKET,
-  LEFTBRACKET,
-  RIGHTBRACE,
-  LEFTBRACE,
-  PERIOD,
-  COMMA,
-  EQUAL,
-  NOTEQUAL,
-  ASSIGN,
-  GREATERTHAN,
-  LESSERTHAN,
-  LESSTHANEQUAL,
-  GREATERTHANEQUAL,
-  AND,
-  OR,
-  NOT,
-  IDENTIFIER,
-  INVALID, 
-  NONE,
-  MULTIPLY, 
-  ADD, 
-  SUBTRACT, 
-  DIVIDE, 
-  END, 
-};
-
-
 // TODO: 
-union TokenValue {
-  int num; 
-  std::string val; 
-  char literal; 
-};
-// TODO:
-struct TokenChunk {
-  Token tok; 
-  TokenValue value;
-};
-
-
-
 class Lexer {
 public:
   Lexer() = default;
   Lexer(std::string);
-  Lexer(Lexer &&) = default;
-  void read_next() noexcept;
-  void read_next(int) noexcept;
   Token get_token();
   void tokenize( std::unique_ptr<Token[]>& token_stack);
 
