@@ -11,6 +11,8 @@ class Lexer {
 public:
   Lexer() = default;
   Lexer(std::string);
+  void read_next() noexcept; 
+  void read_next(int) noexcept; 
   Token get_token();
   void tokenize( std::unique_ptr<Token[]>& token_stack);
 
