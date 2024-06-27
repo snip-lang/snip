@@ -7,7 +7,7 @@ clean:
 		rm -f snip
 debug:
 		echo "Building the project with debug symbols..."
-		g++ -g -o snip src/main.cpp src/lexer.cpp
+		g++ -g -o debug src/main.cpp src/lexer.cpp
 run:
 		g++ -o snip src/main.cpp src/lexer.cpp && ./snip
 test:

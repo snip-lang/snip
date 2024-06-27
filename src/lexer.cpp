@@ -424,8 +424,8 @@ void Lexer::tokenize(std::unique_ptr<Token[]> &token_stack) {
   head = nullptr;
 }
 
+// NOTE: should not be called once EOF is reached
 void Lexer::read_next() noexcept {
-  // NOTE: should not be called once EOF is reached
   if (this->ptr >= this->len) {
     this->current_token[this->ptr] = '\0';
   }
@@ -435,7 +435,6 @@ void Lexer::read_next() noexcept {
 }
 
 void Lexer::read_next(int count) noexcept {
-  // overloaded method to avoid multiple function calls
   if (count > 0) {
     if (this->ptr >= this->len) {
       this->current_token[this->ptr] = '\0';
@@ -446,8 +445,8 @@ void Lexer::read_next(int count) noexcept {
   }
 }
 
+// NOTE: only called when char_stack has a length of atleast one
 Token Lexer::get_token() {
-  // NOTE: only called when char_stack has a length of atleast one
   int i = 0;
   int token_len = this->current_token_ptr;
   while (std::isdigit(this->current_token[i])) {

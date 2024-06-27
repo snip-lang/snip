@@ -101,8 +101,6 @@ std::string readFile(const std::string &filename) {
   }
   std::string source((std::istreambuf_iterator<char>(file)),
                      std::istreambuf_iterator<char>());
-  // DEBUG:
-  std::cout << source << std::endl;
   file.close();
   return source;
 }
@@ -117,10 +115,10 @@ void writeFile(const std::string &filename, const std::stringstream &output) {
 }
 
 bool get_flags(const int &argc, char *argv[], std::string &filename,
-               std::string &parseString, std::string& test_string) {
-  if (argc == 2) { // input file
+               std::string &parseString, std::string &test_string) {
+  if (argc == 2) {
     filename = argv[1];
-  } else if (argc == 3) { // -e flag "string to lex"
+  } else if (argc == 3) {
     if (std::strcmp(argv[1], "-e")) {
       parseString = argv[2];
     }
@@ -132,9 +130,8 @@ bool get_flags(const int &argc, char *argv[], std::string &filename,
   for (int count{0}; count < argc; count++) {
     if (count % 2) {
       currentFlag = argv[count];
-    }
-    else {
-      if (strcmp(currentFlag, "-e") == 0 ) {
+    } else {
+      if (strcmp(currentFlag, "-e") == 0) {
         parseString = argv[count];
       } else if (strcmp(currentFlag, "-t") == 0) {
         isTest = true;
@@ -148,7 +145,7 @@ bool get_flags(const int &argc, char *argv[], std::string &filename,
 }
 
 int main(int argc, char *argv[]) {
-  std::string filename = "./tests/lexer.snip"; // default filename
+  std::string filename = "input.snip";
   std::string test_filename = "output.txt";
   std::string parse_string = "";
   bool isTest = get_flags(argc, argv, filename, parse_string, test_filename);
@@ -158,15 +155,15 @@ int main(int argc, char *argv[]) {
   lex.tokenize(token_stack);
 
   if (isTest) {
-    std::stringstream ss; 
+    std::stringstream ss;
     int i{0};
     while (token_stack[i] != Token::END) {
       std::string s = token_to_string(token_stack[i]);
       ss << token_to_string(token_stack[i]) << std::endl;
       i++;
     }
-    #include "../tests/test_lexer.h"
-    writeFile(test_filename,ss);
+#include "../tests/test_lexer.h"
+    writeFile(test_filename, ss);
   } else {
     int i{0};
     while (token_stack[i] != Token::END) {
