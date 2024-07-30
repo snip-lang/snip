@@ -116,6 +116,8 @@ void writeFile(const std::string &filename, const std::stringstream &output) {
 
 bool get_flags(const int &argc, char *argv[], std::string &filename,
                std::string &parseString, std::string &test_string) {
+  if (argc == 1)
+    return 0;
   if (argc == 2) {
     filename = argv[1];
   } else if (argc == 3) {
