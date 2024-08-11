@@ -270,22 +270,28 @@ PTNode *Parser::parse_var_decl() {
         this->get().type == Token::STRINGK)) {
     throw std::runtime_error("parse_var_decl() expectes type keyword");
   }
-  ParserTokenChunk *type_k = new ParserTokenChunk;
-  type_k->type = token_to_parser_token(this->get().type);
-  type_k->value = this->get().value;
-  PTNode *type = new PTNode(*type_k);
+  ParserTokenChunk type_k;
+  type_k.type = token_to_parser_token(this->get().type);
+  type_k.value = this->get().value;
+  PTNode *type = new PTNode(type_k);
   this->next();
 
-  ParserTokenChunk *ident_ptc = new ParserTokenChunk;
-  ident_ptc->type = token_to_parser_token(this->get().type);
-  ident_ptc->value = this->get().value;
-  PTNode *ident = new PTNode(*ident_ptc);
+  ParserTokenChunk ident_ptc;
+  ident_ptc.type = token_to_parser_token(this->get().type);
+  ident_ptc.value = this->get().value;
+  PTNode *ident = new PTNode(ident_ptc);
   this->next();
 
-  delete type_k;
-  delete ident_ptc;
+  PTNode *assign = new PTNode(this->ptcs.assign);
+  this->next();
+
+  PTNode *expr = this->parse_expr();
+  this->next();
+
   var_decl->add_child(type);
   var_decl->add_child(ident);
+  var_decl->add_child(assign);
+  var_decl->add_child(expr);
   return var_decl;
 }
 
