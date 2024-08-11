@@ -1,4 +1,5 @@
 #include "../src/parser.h"
+#include <vector>
 
 void test_parser_tree() {
   ParserTokenChunk p1 = {ParserToken::IF, 0};
@@ -14,5 +15,6 @@ void test_parser_tree() {
 
 int main(int argc, char *argv[]) {
   test_parser_tree();
+
   return 0;
 }
