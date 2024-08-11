@@ -1,15 +1,25 @@
 #include "globals.h"
+#include <cstddef>
 #include <memory>
 
 #ifndef PARSER_H
 #define PARSER_H
+
+// struct to hold the const structs used during parsing
+struct StmtPTCs {
+  ParserTokenChunk if_stmt = {ParserToken::IFSTMT, ""};
+  ParserTokenChunk while_stmt = {ParserToken::WHILESTMT, ""};
+  ParserTokenChunk fn_decl = {ParserToken::FNDECL, ""};
+};
 
 class PTNode {
 public:
   PTNode(ParserTokenChunk &);
   ~PTNode();
   void add_child(ParserTokenChunk &);
+  void add_child(PTNode *);
   void add_sibling(ParserTokenChunk &);
+  void add_sibling(PTNode *);
   void print(const int);
 
 private:
@@ -20,15 +30,9 @@ private:
   PTNode *prev_sibling = nullptr;
 };
 
-class PT {
-public:
-  PT();
-  ~PT();
-
-private:
-  PTNode *root = nullptr;
-  PTNode *children = nullptr;
-};
+class ExprNode : public PTNode {};
+class IntegerNode : public PTNode {};
+class DoubleNode : public PTNode {};
 
 class Parser {
 public:
@@ -38,11 +42,19 @@ public:
   TokenChunk peek() const noexcept;
   TokenChunk get() const noexcept;
   void next();
-  void parse();
+  void parse(std::unique_ptr<PTNode> &head);
+  void parse_stmt();
+  void add_node();
+  void shunting_yard();
 
 private:
   std::unique_ptr<TokenChunk[]> token_stream;
+  PTNode *parse_expr();
   int ptr = 0;
+  PTNode *head = nullptr;
+  // make a list of const nodes that can be used to initialize to when parsing,
+  // instead of making new parserChunks
+  StmtPTCs ptcs;
 };
 
 #endif // !PARSER_H
