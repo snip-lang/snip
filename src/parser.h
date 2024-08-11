@@ -10,6 +10,7 @@ struct StmtPTCs {
   ParserTokenChunk if_stmt = {ParserToken::IFSTMT, ""};
   ParserTokenChunk while_stmt = {ParserToken::WHILESTMT, ""};
   ParserTokenChunk fn_decl = {ParserToken::FNDECL, ""};
+  ParserTokenChunk var_decl = {ParserToken::VARDECL, ""};
 };
 
 class PTNode {
@@ -33,13 +34,16 @@ private:
 class ExprNode : public PTNode {};
 class IntegerNode : public PTNode {};
 class DoubleNode : public PTNode {};
+class IfStmt : public PTNode {};
+class WhileStmt : public PTNode {};
 
 class Parser {
 public:
-  Parser(std::unique_ptr<TokenChunk[]>);
+  Parser(std::unique_ptr<TokenChunk[]> &);
   Parser();
-  ~Parser();
+  // ~Parser();
   TokenChunk peek() const noexcept;
+  TokenChunk peek(int k) const;
   TokenChunk get() const noexcept;
   void next();
   void parse(std::unique_ptr<PTNode> &head);
@@ -50,7 +54,10 @@ public:
 private:
   std::unique_ptr<TokenChunk[]> token_stream;
   PTNode *parse_expr();
-  int ptr = 0;
+  PTNode *parse_if_stmt();
+  PTNode *parse_while_stmt();
+  PTNode *parse_var_decl();
+  int _ptr = 0;
   PTNode *head = nullptr;
   // make a list of const nodes that can be used to initialize to when parsing,
   // instead of making new parserChunks

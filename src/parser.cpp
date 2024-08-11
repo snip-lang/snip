@@ -39,7 +39,7 @@ TokenChunk ptc_to_tc(const ParserTokenChunk &ptc) {
   return tc;
 }
 
-Parser::Parser(std::unique_ptr<TokenChunk[]> token_s) {
+Parser::Parser(std::unique_ptr<TokenChunk[]> &token_s) {
   token_stream = std::move(token_s);
   ParserTokenChunk ptc;
 }
@@ -109,13 +109,20 @@ PTNode::~PTNode() { // pointless
   }
 }
 
-PTNode::PTNode(ParserTokenChunk &tok) { this->val = &tok; }
+PTNode::PTNode(ParserTokenChunk &tok) {
+  this->val = new ParserTokenChunk;
+  this->val->type = tok.type;
+  this->val->value = tok.value;
+}
 
-void Parser::next() { this->ptr++; }
+void Parser::next() { this->_ptr++; }
 
-TokenChunk Parser::peek() const noexcept { return this->token_stream[ptr + 1]; }
+TokenChunk Parser::peek() const noexcept {
+  return this->token_stream[_ptr + 1];
+}
+TokenChunk Parser::peek(int k) const { return this->token_stream[_ptr + k]; }
 
-TokenChunk Parser::get() const noexcept { return this->token_stream[ptr]; }
+TokenChunk Parser::get() const noexcept { return this->token_stream[_ptr]; }
 
 void Parser::parse_stmt() {} // TODO:
 
@@ -233,28 +240,74 @@ void Parser::shunting_yard() {
 
 PTNode *expr_to_tree() { return nullptr; } // TODO:
 
+PTNode *Parser::parse_if_stmt() {
+  PTNode *if_stmt = new PTNode(this->ptcs.if_stmt);
+  this->next();
+  this->parse_expr(); // TODO:
+  this->next();
+  if (this->get().type == Token::LEFTBRACE) {
+    this->parse_stmt();
+    if (this->get().type == Token::RIGHTBRACE) {
+    }
+  }
+  return if_stmt;
+}
+
+PTNode *Parser::parse_while_stmt() {
+  PTNode *while_stmt = new PTNode(this->ptcs.while_stmt);
+  this->next();
+  this->parse_expr();
+  this->next();
+  return while_stmt;
+}
+
+PTNode *Parser::parse_var_decl() {
+  // TYPE IDENT ASSIGN EXPR
+  PTNode *var_decl = new PTNode(this->ptcs.var_decl);
+  this->next();
+  if (!(this->get().type == Token::INTK || this->get().type == Token::CHARK ||
+        this->get().type == Token::DOUBLEK ||
+        this->get().type == Token::STRINGK)) {
+    throw std::runtime_error("parse_var_decl() expectes type keyword");
+  }
+  ParserTokenChunk *type_k = new ParserTokenChunk;
+  type_k->type = token_to_parser_token(this->get().type);
+  type_k->value = this->get().value;
+  PTNode *type = new PTNode(*type_k);
+  this->next();
+
+  ParserTokenChunk *ident_ptc = new ParserTokenChunk;
+  ident_ptc->type = token_to_parser_token(this->get().type);
+  ident_ptc->value = this->get().value;
+  PTNode *ident = new PTNode(*ident_ptc);
+  this->next();
+
+  delete type_k;
+  delete ident_ptc;
+  var_decl->add_child(type);
+  var_decl->add_child(ident);
+  return var_decl;
+}
+
 void Parser::parse(std::unique_ptr<PTNode> &head) {
-  if (this->token_stream[ptr].type == Token::START) {
+  if (this->token_stream[_ptr].type == Token::START) {
     ParserTokenChunk start;
     start.type = ParserToken::START;
     this->head = new PTNode(start);
     this->next();
-    while (this->token_stream[ptr].type != Token::END) {
+    while (this->token_stream[_ptr].type != Token::END) {
       if ((this->get().type == Token::IF)) {
-        this->head->add_child(this->ptcs.if_stmt);
-        this->next();
-        this->parse_expr(); // TODO:
-        this->next();
-        if (this->get().type == Token::LEFTBRACE) {
-          this->parse_stmt();
-          if (this->get().type == Token::RIGHTBRACE) {
-          }
-        }
+        this->parse_if_stmt();
       } else if (this->get().type == Token::WHILE) {
-        this->head->add_child(this->ptcs.while_stmt);
-        this->next();
-        this->parse_expr();
-        this->next();
+        this->parse_while_stmt();
+      } else if (this->get().type == Token::INTK ||
+                 this->get().type == Token::CHARK ||
+                 this->get().type == Token::DOUBLEK ||
+                 this->get().type == Token::STRINGK) {
+        if (this->peek().type == Token::IDENTIFIER &&
+            this->peek(2).type == Token::ASSIGN) {
+          this->parse_var_decl();
+        }
       }
     }
     ParserTokenChunk end;
