@@ -1,15 +1,17 @@
 SRC_DIR = src
+TEST_DIR = tests
 BUILD_DIR = build
+TEST_BUILD_DIR = tbuild 
 SOURCE = $(SRC_DIR)/lexer.cpp $(SRC_DIR)/parser.cpp $(SRC_DIR)/helper.cpp
 DRIVER_SOURCE = $(SRC_DIR)/main.cpp
-TESTS = tests/test.cpp tests/test_parser.cpp
+TEST_SOURCE = $(TEST_DIR)/test.cpp $(TEST_DIR)/test_parser.cpp
 EXECUTABLE = snip
-TEST_EXECUTABLE = snip_tests
+TEST_EXECUTABLE = testbin
 DEBUG_EXECUTABLE = debug
 
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SOURCE))
 DRIVER_OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(DRIVER_SOURCE))
-TEST_OBJECTS = $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(TESTS))
+TEST_OBJECTS = $(patsubst $(TEST_DIR)/%.cpp, $(TEST_BUILD_DIR)/%.o, $(TEST_SOURCE))
 
 default: $(EXECUTABLE)
 
@@ -19,31 +21,26 @@ $(EXECUTABLE): $(OBJECTS) $(DRIVER_OBJECTS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@echo "Compiling $<..."
-	@g++ -c $< -o $@
+	@g++ -g -c $< -o $@
 
-$(BUILD_DIR)/%.o: %.cpp
-	@echo "Compiling $<..."
-	@g++ -c $< -o $@
+$(TEST_BUILD_DIR)/%.o: $(TEST_DIR)/%.cpp $(SRC_DIR)/%.cpp
+	@echo "Building the project with debug symbols..."
+	@echo "Compiling $< with debug symbols..."
+	@g++ -g -c $< -o $@
 
 clean:
 	@echo "Cleaning up..."
 	@rm -f $(EXECUTABLE) $(TEST_EXECUTABLE) $(DEBUG_EXECUTABLE) $(BUILD_DIR)/*.o
 
-debug: $(OBJECTS) $(DRIVER_OBJECTS)
+debug: $(SOURCE) $(DRIVER_SOURCE)
 	@echo "Building the project with debug symbols..."
-	@g++ -g -o $(DEBUG_EXECUTABLE) $(OBJECTS) $(DRIVER_OBJECTS)
+	@g++ -g -o $(DEBUG_EXECUTABLE) $(SOURCE) $(DRIVER_SOURCE) 
 
 run: $(EXECUTABLE)
 	@./$(EXECUTABLE)
 
-test: $(TEST_OBJECTS) $(OBJECTS)
-	@echo "Running tests..."
-	@g++ -o $(TEST_EXECUTABLE) $(OBJECTS) $(TEST_OBJECTS)
-	@./$(TEST_EXECUTABLE)
-
-test_debug: $(TEST_OBJECTS) $(OBJECTS)
-	@echo "Running tests with debug symbols..."
+test: $(TEST_OBJECTS) $(patsubst $(SRC_DIR)/%.cpp, $(TEST_BUILD_DIR)/%.o, $(SOURCE))
+	@echo "Building the project with debug symbols..."
 	@g++ -g -o $(TEST_EXECUTABLE) $(OBJECTS) $(TEST_OBJECTS)
-	@./$(TEST_EXECUTABLE)
 
 .PHONY: default clean debug run test test_debug
