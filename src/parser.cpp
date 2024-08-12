@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "error.h"
 #include "globals.h"
 #include "helper.h"
 #include <array>
@@ -54,23 +55,35 @@ void add_sym_to_output_queue(std::unique_ptr<OutputQueue> &queue,
   }
 }
 
+void add_node_to_output_queue(std::unique_ptr<OutputQueue> &queue,
+                              PTNode *node) {
+  OutputQueueNode *new_node = new OutputQueueNode;
+  new_node->node = std::unique_ptr<PTNode>(node);
+  if (queue->tail == nullptr) {
+    queue->tail = new_node;
+    queue->head = new_node;
+  } else {
+    queue->tail->next = new_node;
+    queue->tail = queue->tail->next;
+  }
+}
+
 /*
  * Remove nodes from head
  */
-std::unique_ptr<ParserTokenChunk>
-remove_tail_from_queue(std::unique_ptr<OutputQueue> &queue) {
+std::unique_ptr<PTNode>
+pop_from_output_queue(std::unique_ptr<OutputQueue> &queue) {
   if (queue->head == nullptr) {
     return nullptr;
   }
-  std::unique_ptr<ParserTokenChunk> ptc =
-      std::make_unique<ParserTokenChunk>(*queue->head->ptc);
+  std::unique_ptr<PTNode> node = std::move(queue->head->node);
   OutputQueueNode *temp = queue->head;
   queue->head = temp->next;
   if (queue->head == nullptr) {
     queue->tail = nullptr;
   }
   delete temp;
-  return ptc;
+  return node;
 }
 
 struct OperatorStackNode {
@@ -227,7 +240,7 @@ TokenChunk Parser::get() const noexcept { return this->token_stream[_ptr]; }
 
 void Parser::parse_stmt() {} // TODO:
 
-PTNode *Parser::parse_expr() { // TODO:
+PTNode *Parser::parse_expr() { // TODO: parse output queue
   PTNode *expression = new PTNode(this->ptcs.expr);
   if (this->get().type == Token::LEFTPARENTHESIS) {
     this->next();
@@ -239,16 +252,13 @@ PTNode *Parser::parse_expr() { // TODO:
     auto op_stack = std::make_unique<OperatorStack>();
     while (this->get().type != Token::RIGHTPARENTHESIS) {
       switch (current.type) {
-      case Token::RIGHTPARENTHESIS:
-        temp = this->parse_expr();
-        expression->add_child(temp);
-        break;
       case Token::LEFTPARENTHESIS:
         temp = this->parse_expr();
         expression->add_child(temp);
         break;
       case Token::INT:
       case Token::DOUBLE:
+      case Token::IDENTIFIER:
         add_sym_to_output_queue(output_q, ptc);
         break;
       default:
@@ -259,7 +269,22 @@ PTNode *Parser::parse_expr() { // TODO:
         }
         while (token_type_to_precedence(op_stack->head->ptc->type) >=
                token_type_to_precedence(ptc.type)) {
-          add_sym_to_output_queue(output_q, *pop_from_stack(op_stack));
+          // pop from stack, create a node with its operands, and add to output
+          // queue
+          auto op = *pop_from_stack(op_stack);
+          auto right = pop_from_output_queue(output_q);
+          auto left = pop_from_output_queue(output_q);
+          if (left == nullptr || right == nullptr) {
+            throw std::runtime_error(
+                "binop in parse_expr() expects left and right");
+          }
+          PTNode *op_node = new PTNode(op);
+          PTNode *left_node = left.release();
+          PTNode *right_node = right.release();
+          op_node->add_child(left_node);
+          op_node->add_child(right_node);
+
+          add_node_to_output_queue(output_q, op_node);
         }
         add_op_to_stack(op_stack, ptc);
         break;
@@ -269,14 +294,14 @@ PTNode *Parser::parse_expr() { // TODO:
     while (op_stack->head != nullptr) {
       add_sym_to_output_queue(output_q, *pop_from_stack(op_stack));
     }
-    // (1+2+3)
-    // 1 2 3 + + +
+    while (output_q->head != nullptr) {
+      auto node = pop_from_output_queue(output_q);
+      expression->add_child(node.release());
+    }
   }
   expression->add_child(this->ptcs.right_paren);
   return expression;
 }
-
-PTNode *expr_to_tree() { return nullptr; } // TODO:
 
 PTNode *Parser::parse_if_stmt() {
   PTNode *if_stmt = new PTNode(this->ptcs.if_stmt);
