@@ -28,6 +28,86 @@ ParserTokenChunk tc_to_ptc(const TokenChunk &tc) {
   return ptc;
 }
 
+struct OutputQueueNode {
+  std::unique_ptr<PTNode> node = nullptr;
+  ParserTokenChunk *ptc = nullptr;
+  OutputQueueNode *next = nullptr;
+};
+
+struct OutputQueue {
+  OutputQueueNode *head = nullptr;
+  OutputQueueNode *tail = nullptr;
+};
+/*
+ * Adds nodes to tail
+ */
+void add_sym_to_output_queue(std::unique_ptr<OutputQueue> &queue,
+                             ParserTokenChunk &sym) {
+  OutputQueueNode *new_node = new OutputQueueNode;
+  new_node->node = std::make_unique<PTNode>(sym);
+  if (queue->tail == nullptr) {
+    queue->tail = new_node;
+    queue->head = new_node;
+  } else {
+    queue->tail->next = new_node;
+    queue->tail = queue->tail->next;
+  }
+}
+
+/*
+ * Remove nodes from head
+ */
+std::unique_ptr<ParserTokenChunk>
+remove_tail_from_queue(std::unique_ptr<OutputQueue> &queue) {
+  if (queue->head == nullptr) {
+    return nullptr;
+  }
+  std::unique_ptr<ParserTokenChunk> ptc =
+      std::make_unique<ParserTokenChunk>(*queue->head->ptc);
+  OutputQueueNode *temp = queue->head;
+  queue->head = temp->next;
+  if (queue->head == nullptr) {
+    queue->tail = nullptr;
+  }
+  delete temp;
+  return ptc;
+}
+
+struct OperatorStackNode {
+  ParserTokenChunk *ptc = nullptr;
+  OperatorStackNode *next = nullptr;
+};
+
+struct OperatorStack {
+  OperatorStackNode *head = nullptr;
+};
+
+void add_op_to_stack(std::unique_ptr<OperatorStack> &stack,
+                     ParserTokenChunk &op) {
+  if (stack->head->ptc == nullptr) {
+    stack->head = new OperatorStackNode;
+    stack->head->ptc = &op;
+  } else {
+    OperatorStackNode *new_node = new OperatorStackNode;
+    new_node->ptc = &op;
+    stack->head->next = new_node;
+    stack->head = new_node;
+  }
+}
+
+std::unique_ptr<ParserTokenChunk>
+pop_from_stack(std::unique_ptr<OperatorStack> &stack) {
+  if (stack->head == nullptr) {
+    return nullptr;
+  }
+  std::unique_ptr<ParserTokenChunk> ptc =
+      std::make_unique<ParserTokenChunk>(*stack->head->ptc);
+  OperatorStackNode *temp = stack->head;
+  stack->head = stack->head->next;
+  delete temp;
+  return ptc;
+}
+
 Token parser_token_to_token(const ParserToken &pt) {
   return static_cast<Token>(pt);
 }
@@ -99,20 +179,41 @@ void PTNode::add_child(PTNode *child) {
   }
 }
 
-PTNode::~PTNode() { // pointless
+PTNode::~PTNode() { // NOTE: pointless
   delete this->first_child;
   delete this->next_sibling;
-  if (!(this->val->type == ParserToken::IFSTMT ||
-        this->val->type == ParserToken::WHILESTMT ||
-        this->val->type == ParserToken::FNDECL)) {
-    delete val;
-  }
 }
 
-PTNode::PTNode(ParserTokenChunk &tok) {
-  this->val = new ParserTokenChunk;
+PTNode::PTNode(ParserTokenChunk tok) {
+  this->val = std::make_unique<ParserTokenChunk>();
   this->val->type = tok.type;
   this->val->value = tok.value;
+}
+
+OperatorPrecedence token_type_to_precedence(const ParserToken &tok) {
+  switch (tok) {
+  case ParserToken::MULTIPLY:
+  case ParserToken::DIVIDE:
+    return OperatorPrecedence::MULTIDIV;
+  case ParserToken::ADD:
+  case ParserToken::SUBTRACT:
+    return OperatorPrecedence::ADDSUB;
+  case ParserToken::GREATERTHANEQUAL:
+  case ParserToken::LESSTHANEQUAL:
+  case ParserToken::GREATERTHAN:
+  case ParserToken::LESSERTHAN:
+    return OperatorPrecedence::COMPARISON;
+  case ParserToken::NOT:
+    return OperatorPrecedence::NOT;
+  case ParserToken::ASSIGN:
+    return OperatorPrecedence::ASSIGN;
+  case ParserToken::AND:
+    return OperatorPrecedence::AND;
+  case ParserToken::OR:
+    return OperatorPrecedence::OR;
+  default:
+    return OperatorPrecedence::NONE;
+  }
 }
 
 void Parser::next() { this->_ptr++; }
@@ -130,99 +231,63 @@ PTNode *Parser::parse_expr() { // TODO:
   PTNode *expression = nullptr;
   if (this->get().type == Token::LEFTPARENTHESIS) {
     this->next();
+    expression->add_child(this->ptcs.left_paren);
+    PTNode *temp = nullptr;
+    auto current = this->get();
+    ParserTokenChunk ptc = tc_to_ptc(current);
+    std::unique_ptr<OutputQueue> output_q = std::make_unique<OutputQueue>();
+    auto op_stack = std::make_unique<OperatorStack>();
     while (this->get().type != Token::RIGHTPARENTHESIS) {
-      this->next();
-      if (this->get().type == Token::LEFTPARENTHESIS) {
-        PTNode *temp = this->parse_expr();
+      switch (current.type) {
+      case Token::RIGHTPARENTHESIS:
+        temp = this->parse_expr();
         expression->add_child(temp);
+        break;
+      case Token::LEFTPARENTHESIS:
+        temp = this->parse_expr();
+        expression->add_child(temp);
+        break;
+      case Token::INT:
+      case Token::DOUBLE:
+        add_sym_to_output_queue(output_q, ptc);
+        break;
+      default:
+        // TODO: add fn calls, and comma support for factors in fn calls
+        if (op_stack->head == nullptr) {
+          add_op_to_stack(op_stack, ptc);
+          break;
+        }
+        while (token_type_to_precedence(op_stack->head->ptc->type) >=
+               token_type_to_precedence(ptc.type)) {
+          add_sym_to_output_queue(output_q, *pop_from_stack(op_stack));
+        }
+        add_op_to_stack(op_stack, ptc);
+        break;
       }
+      this->next();
     }
-    return expression;
+    while (op_stack->head != nullptr) {
+      add_sym_to_output_queue(output_q, *pop_from_stack(op_stack));
+    }
+    // (1+2+3)
+    // 1 2 3 + + +
+    while (output_q->head) {
+    }
   }
+  expression->add_child(this->ptcs.right_paren);
   return expression;
-}
-
-struct OutputQueueNode {
-  ParserTokenChunk *ptc = nullptr;
-  OutputQueueNode *next = nullptr;
-};
-
-struct OutputQueue {
-  OutputQueueNode *head = nullptr;
-  OutputQueueNode *tail = nullptr;
-};
-/*
- * Adds nodes to tail
- */
-void add_output_sym_to_queue(OutputQueue *&queue, ParserTokenChunk &sym) {
-  if (queue->tail == nullptr) {
-    OutputQueueNode *new_node = new OutputQueueNode;
-    new_node->ptc = &sym;
-    queue->head = new_node;
-    queue->tail = new_node;
-  } else {
-    OutputQueueNode *new_node = new OutputQueueNode;
-    new_node->ptc = &sym;
-    queue->tail->next = new_node;
-    queue->tail = new_node;
-  }
-}
-
-/*
- * Remove nodes from head
- */
-ParserTokenChunk *remove_tail_from_queue(OutputQueue *&queue) {
-  if (queue->head == nullptr) {
-    return nullptr;
-  }
-  OutputQueueNode *temp = queue->head;
-  queue->head = temp->next;
-  if (queue->head == nullptr) {
-    queue->tail = nullptr;
-  }
-  return temp->ptc;
-}
-
-struct OperatorStackNode {
-  ParserTokenChunk *ptc = nullptr;
-  OperatorStackNode *next = nullptr;
-};
-
-struct OperatorStack {
-  OperatorStackNode *head = nullptr;
-};
-
-void add_op_to_stack(OperatorStack *&stack, ParserTokenChunk &op) {
-  if (stack->head->ptc == nullptr) {
-    stack->head = new OperatorStackNode;
-    stack->head->ptc = &op;
-  } else {
-    OperatorStackNode *new_node = new OperatorStackNode;
-    new_node->ptc = &op;
-    stack->head->next = new_node;
-    stack->head = new_node;
-  }
-}
-
-ParserTokenChunk *remove_op_from_stack(OperatorStack *&stack) {
-  if (stack->head == nullptr) {
-    return nullptr;
-  }
-  OperatorStackNode *temp = stack->head;
-  stack->head = temp->next;
-  return stack->head->ptc;
 }
 
 /*
  * Implement the shunting yard algorithm
  */
 void Parser::shunting_yard() {
-  OutputQueue *output_q = new OutputQueue;
-  OperatorStack *o_stack = new OperatorStack;
+  auto output_q = std::make_unique<OutputQueue>();
+  auto o_stack = std::make_unique<OperatorStack>();
   while (this->get().type != Token::END) {
     ParserTokenChunk current = tc_to_ptc(this->get());
     if (current.type == Token::INT || current.type == Token::DOUBLE) {
-      add_output_sym_to_queue(output_q, current);
+      add_sym_to_output_queue(output_q, current);
     } else if (current.type == Token::ADD || current.type == Token::SUBTRACT ||
                current.type == Token::MULTIPLY ||
                current.type == Token::DIVIDE) {
@@ -231,9 +296,9 @@ void Parser::shunting_yard() {
       add_op_to_stack(o_stack, current);
     } else if (current.type == Token::RIGHTPARENTHESIS) {
       while (!(o_stack->head->ptc->type == Token::LEFTPARENTHESIS)) {
-        add_output_sym_to_queue(output_q, *remove_op_from_stack(o_stack));
+        add_sym_to_output_queue(output_q, *pop_from_stack(o_stack));
       }
-      remove_op_from_stack(o_stack);
+      pop_from_stack(o_stack);
     }
   }
 }
@@ -262,14 +327,13 @@ PTNode *Parser::parse_while_stmt() {
 }
 
 PTNode *Parser::parse_var_decl() {
-  // TYPE IDENT ASSIGN EXPR
   PTNode *var_decl = new PTNode(this->ptcs.var_decl);
-  this->next();
   if (!(this->get().type == Token::INTK || this->get().type == Token::CHARK ||
         this->get().type == Token::DOUBLEK ||
         this->get().type == Token::STRINGK)) {
-    throw std::runtime_error("parse_var_decl() expectes type keyword");
+    throw std::runtime_error("parse_var_decl() expects type keyword");
   }
+  this->next();
   ParserTokenChunk type_k;
   type_k.type = token_to_parser_token(this->get().type);
   type_k.value = this->get().value;
