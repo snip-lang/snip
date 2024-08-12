@@ -228,7 +228,7 @@ TokenChunk Parser::get() const noexcept { return this->token_stream[_ptr]; }
 void Parser::parse_stmt() {} // TODO:
 
 PTNode *Parser::parse_expr() { // TODO:
-  PTNode *expression = nullptr;
+  PTNode *expression = new PTNode(this->ptcs.expr);
   if (this->get().type == Token::LEFTPARENTHESIS) {
     this->next();
     expression->add_child(this->ptcs.left_paren);
@@ -271,36 +271,9 @@ PTNode *Parser::parse_expr() { // TODO:
     }
     // (1+2+3)
     // 1 2 3 + + +
-    while (output_q->head) {
-    }
   }
   expression->add_child(this->ptcs.right_paren);
   return expression;
-}
-
-/*
- * Implement the shunting yard algorithm
- */
-void Parser::shunting_yard() {
-  auto output_q = std::make_unique<OutputQueue>();
-  auto o_stack = std::make_unique<OperatorStack>();
-  while (this->get().type != Token::END) {
-    ParserTokenChunk current = tc_to_ptc(this->get());
-    if (current.type == Token::INT || current.type == Token::DOUBLE) {
-      add_sym_to_output_queue(output_q, current);
-    } else if (current.type == Token::ADD || current.type == Token::SUBTRACT ||
-               current.type == Token::MULTIPLY ||
-               current.type == Token::DIVIDE) {
-      add_op_to_stack(o_stack, current);
-    } else if (current.type == Token::LEFTPARENTHESIS) {
-      add_op_to_stack(o_stack, current);
-    } else if (current.type == Token::RIGHTPARENTHESIS) {
-      while (!(o_stack->head->ptc->type == Token::LEFTPARENTHESIS)) {
-        add_sym_to_output_queue(output_q, *pop_from_stack(o_stack));
-      }
-      pop_from_stack(o_stack);
-    }
-  }
 }
 
 PTNode *expr_to_tree() { return nullptr; } // TODO:
@@ -333,7 +306,7 @@ PTNode *Parser::parse_var_decl() {
         this->get().type == Token::STRINGK)) {
     throw std::runtime_error("parse_var_decl() expects type keyword");
   }
-  this->next();
+
   ParserTokenChunk type_k;
   type_k.type = token_to_parser_token(this->get().type);
   type_k.value = this->get().value;
@@ -352,10 +325,13 @@ PTNode *Parser::parse_var_decl() {
   PTNode *expr = this->parse_expr();
   this->next();
 
+  PTNode *semicolon = new PTNode(this->ptcs.semicolon);
+  this->next();
   var_decl->add_child(type);
   var_decl->add_child(ident);
   var_decl->add_child(assign);
   var_decl->add_child(expr);
+  var_decl->add_child(semicolon);
   return var_decl;
 }
 

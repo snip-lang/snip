@@ -7,15 +7,24 @@
 
 // struct to hold the const structs used during parsing
 struct StmtPTCs {
+  ParserTokenChunk semicolon = {ParserToken::SEMICOLON, ""};
   ParserTokenChunk if_stmt = {ParserToken::IFSTMT, ""};
+  ParserTokenChunk expr = {ParserToken::EXPR, ""};
   ParserTokenChunk while_stmt = {ParserToken::WHILESTMT, ""};
   ParserTokenChunk fn_decl = {ParserToken::FNDECL, ""};
   ParserTokenChunk var_decl = {ParserToken::VARDECL, ""};
+  ParserTokenChunk assign = {ParserToken::ASSIGN, ""};
+  ParserTokenChunk add = {ParserToken::ADD, ""};
+  ParserTokenChunk subtract = {ParserToken::SUBTRACT, ""};
+  ParserTokenChunk multiply = {ParserToken::MULTIPLY, ""};
+  ParserTokenChunk divide = {ParserToken::DIVIDE, ""};
+  ParserTokenChunk left_paren = {ParserToken::LEFTPARENTHESIS, ""};
+  ParserTokenChunk right_paren = {ParserToken::RIGHTPARENTHESIS, ""};
 };
 
 class PTNode {
 public:
-  PTNode(ParserTokenChunk &);
+  PTNode(ParserTokenChunk);
   ~PTNode();
   void add_child(ParserTokenChunk &);
   void add_child(PTNode *);
@@ -24,7 +33,7 @@ public:
   void print(const int);
 
 private:
-  ParserTokenChunk *val = nullptr;
+  std::unique_ptr<ParserTokenChunk> val = nullptr;
   PTNode *first_child = nullptr;
   PTNode *last_child = nullptr;
   PTNode *next_sibling = nullptr;
