@@ -306,7 +306,10 @@ PTNode *Parser::parse_expr() { // TODO: parse output queue
 PTNode *Parser::parse_if_stmt() {
   PTNode *if_stmt = new PTNode(this->ptcs.if_stmt);
   this->next();
-  this->parse_expr(); // TODO:
+  PTNode *cond = this->parse_expr(); // TODO:
+  if (cond == nullptr) {
+    throw std::runtime_error("parse_if_stmt() expects condition");
+  }
   this->next();
   if (this->get().type == Token::LEFTBRACE) {
     this->parse_stmt();
@@ -332,31 +335,26 @@ PTNode *Parser::parse_var_decl() {
     throw std::runtime_error("parse_var_decl() expects type keyword");
   }
 
-  ParserTokenChunk type_k;
-  type_k.type = token_to_parser_token(this->get().type);
-  type_k.value = this->get().value;
-  PTNode *type = new PTNode(type_k);
+  ParserTokenChunk type_k = {token_to_parser_token(this->get().type),
+                             this->get().value};
+  var_decl->add_child(new PTNode(type_k));
   this->next();
 
-  ParserTokenChunk ident_ptc;
-  ident_ptc.type = token_to_parser_token(this->get().type);
-  ident_ptc.value = this->get().value;
-  PTNode *ident = new PTNode(ident_ptc);
+  ParserTokenChunk ident_ptc = {token_to_parser_token(this->get().type),
+                                this->get().value};
+  var_decl->add_child(new PTNode(ident_ptc));
   this->next();
 
-  PTNode *assign = new PTNode(this->ptcs.assign);
-  this->next();
+  if (this->get().type == Token::ASSIGN) {
+    var_decl->add_child(new PTNode(this->ptcs.assign));
+    this->next();
 
-  PTNode *expr = this->parse_expr();
-  this->next();
+    var_decl->add_child(this->parse_expr());
+    this->next();
+  }
 
-  PTNode *semicolon = new PTNode(this->ptcs.semicolon);
+  var_decl->add_child(new PTNode(this->ptcs.semicolon));
   this->next();
-  var_decl->add_child(type);
-  var_decl->add_child(ident);
-  var_decl->add_child(assign);
-  var_decl->add_child(expr);
-  var_decl->add_child(semicolon);
   return var_decl;
 }
 
@@ -375,8 +373,7 @@ void Parser::parse(std::unique_ptr<PTNode> &head) {
                  this->get().type == Token::CHARK ||
                  this->get().type == Token::DOUBLEK ||
                  this->get().type == Token::STRINGK) {
-        if (this->peek().type == Token::IDENTIFIER &&
-            this->peek(2).type == Token::ASSIGN) {
+        if (this->peek().type == Token::IDENTIFIER) {
           this->parse_var_decl();
         }
       }
