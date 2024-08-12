@@ -1,4 +1,6 @@
 #include "globals.h"
+#include <iostream>
+#include <memory>
 
 const std::string token_to_string(const Token &tok) {
   switch (tok) {
@@ -79,7 +81,7 @@ const std::string token_to_string(const Token &tok) {
   case Token::INVALID:
     return "INVALID";
   case Token::END:
-    exit(0);
+    return "END";
   case Token::NONE:
     return "NONE";
   case Token::START:
@@ -192,4 +194,34 @@ const std::string token_to_string(const ParserToken &tok) {
   default:
     return "no token, somehow";
   }
+}
+
+void print_lexed_tokens(std::unique_ptr<TokenChunk[]> &token_stack) {
+  int i{0};
+  while (token_stack[i].type != Token::END) {
+    std::string s = token_to_string(token_stack[i].type);
+    if (token_stack[i].type == Token::DOUBLE) {
+      std::cout << token_to_string(token_stack[i].type) << " "
+                << std::get<std::string>(token_stack[i].value) << std::endl;
+    } else if (token_stack[i].type == Token::INT) {
+      std::cout << token_to_string(token_stack[i].type) << " "
+                << std::get<int>(token_stack[i].value) << std::endl;
+    } else
+      std::cout << token_to_string(token_stack[i].type) << " "
+                << std::get<std::string>(token_stack[i].value) << std::endl;
+    i++;
+  }
+  std::cout << token_to_string(token_stack[i].type) << std::endl;
+}
+
+std::string
+print_lexed_tokens_test(std::unique_ptr<TokenChunk[]> &token_stack) {
+  std::stringstream ss;
+  int i{0};
+  while (token_stack[i].type != Token::END) {
+    std::string s = token_to_string(token_stack[i].type);
+    ss << token_to_string(token_stack[i].type) << std::endl;
+    i++;
+  }
+  return ss.str();
 }
