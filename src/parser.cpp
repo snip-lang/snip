@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "helper.h"
 #include <array>
+#include <cassert>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
@@ -329,11 +330,9 @@ PTNode *Parser::parse_while_stmt() {
 
 PTNode *Parser::parse_var_decl() {
   PTNode *var_decl = new PTNode(this->ptcs.var_decl);
-  if (!(this->get().type == Token::INTK || this->get().type == Token::CHARK ||
-        this->get().type == Token::DOUBLEK ||
-        this->get().type == Token::STRINGK)) {
-    throw std::runtime_error("parse_var_decl() expects type keyword");
-  }
+  assert((this->get().type == Token::INTK || this->get().type == Token::CHARK ||
+          this->get().type == Token::DOUBLEK ||
+          this->get().type == Token::STRINGK));
 
   ParserTokenChunk type_k = {token_to_parser_token(this->get().type),
                              this->get().value};
@@ -359,27 +358,29 @@ PTNode *Parser::parse_var_decl() {
 }
 
 void Parser::parse(std::unique_ptr<PTNode> &head) {
-  if (this->token_stream[_ptr].type == Token::START) {
-    ParserTokenChunk start;
-    start.type = ParserToken::START;
-    this->head = new PTNode(start);
-    this->next();
-    while (this->token_stream[_ptr].type != Token::END) {
-      if ((this->get().type == Token::IF)) {
-        this->parse_if_stmt();
-      } else if (this->get().type == Token::WHILE) {
-        this->parse_while_stmt();
-      } else if (this->get().type == Token::INTK ||
-                 this->get().type == Token::CHARK ||
-                 this->get().type == Token::DOUBLEK ||
-                 this->get().type == Token::STRINGK) {
-        if (this->peek().type == Token::IDENTIFIER) {
-          this->parse_var_decl();
-        }
+  assert(this->get().type == Token::START);
+  ParserTokenChunk start = {ParserToken::START, ""};
+  this->head = new PTNode(start);
+  this->next();
+  while (this->token_stream[_ptr].type != Token::END) {
+    switch (this->get().type) {
+    case Token::IF:
+      this->parse_if_stmt();
+      break;
+    case Token::WHILE:
+      this->parse_while_stmt();
+    case Token::INTK:
+    case Token::CHARK:
+    case Token::DOUBLEK:
+    case Token::STRINGK:
+      if (this->peek().type == Token::IDENTIFIER) {
+        this->parse_var_decl();
       }
+      break;
+    default:
+      break;
     }
-    ParserTokenChunk end;
-    end.type = ParserToken::END;
-    this->head->add_sibling(end);
   }
+  ParserTokenChunk end = {ParserToken::END, ""};
+  this->head->add_sibling(end);
 }
