@@ -43,7 +43,7 @@
         | "--"
         | "!"
 <identifier> ::= <char> (<char> | <digit> | "_")*
-<type> ::= "int" "char" "bool" "string"
+<type> ::= "int" "char" "bool" "str"
 <digit> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 <char> ::= [A-Z][a-z]
 
@@ -51,7 +51,7 @@
 
 ### Keywords
 
-- Data Types: `int`, `char`, `string`, `bool` , `double`,
+- Data Types: `int`, `char`, `str`, `bool` , `double`,
 
 - Keywords:
   `const` `fn` `if`/`elif`/`else`
