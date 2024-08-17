@@ -34,6 +34,14 @@ const std::string token_to_string(const Token &tok) {
     return "STRINGK";
   case Token::BOOLK:
     return "BOOLK";
+  case Token::ADD:
+    return "ADD";
+  case Token::SUBTRACT:
+    return "SUBTRACT";
+  case Token::MULTIPLY:
+    return "MULTIPLY";
+  case Token::DIVIDE:
+    return "DIVIDE";
   case Token::WHILE:
     return "WHILE";
   case Token::RIGHTPARENTHESIS:
@@ -181,6 +189,22 @@ const std::string token_to_string(const ParserToken &tok) {
     return "START";
   case ParserToken::IFSTMT:
     return "IFSTMT";
+  case ParserToken::STMT:
+    return "STMT";
+  case ParserToken::ASSIGNSTMT:
+    return "ASSIGNSTMT";
+  case ParserToken::STMTS:
+    return "STMTS";
+  case ParserToken::EXPR:
+    return "EXPR";
+  case ParserToken::ADD:
+    return "ADD";
+  case ParserToken::SUBTRACT:
+    return "SUBTRACT";
+  case ParserToken::MULTIPLY:
+    return "MULTIPLY";
+  case ParserToken::DIVIDE:
+    return "DIVIDE";
   case ParserToken::WHILESTMT:
     return "WHILESTMT";
   case ParserToken::DIGIT:
@@ -193,8 +217,6 @@ const std::string token_to_string(const ParserToken &tok) {
     return "FNDECL";
   case ParserToken::BINOP:
     return "BINOP";
-  case ParserToken::EXPR:
-    return "EXPR";
   default:
     return "no token, somehow";
   }

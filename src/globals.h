@@ -5,6 +5,7 @@
 #include <variant>
 
 enum class Token {
+  COLON = -1,
   UNDEFINED = 0,
   SEMICOLON = 1,
   IF = 2,
@@ -67,6 +68,7 @@ enum OperatorPrecedence {
 };
 
 enum class ParserToken {
+  COLON = -1,
   UNDEFINED = 0,
   SEMICOLON = 1,
   IF = 2,
@@ -113,15 +115,16 @@ enum class ParserToken {
   START = 43,
   END = 44,
   STMTS = 45, // TODO:
-  STMT = 45,
-  EXPR = 46,
-  BINOP = 47,
-  FNDECL = 48,
-  IFSTMT = 49,
-  WHILESTMT = 50,
-  VARDECL = 51,
-  DIGIT = 52,
-  TYPE = 53,
+  STMT = 46,
+  EXPR = 47,
+  BINOP = 48,
+  FNDECL = 49,
+  IFSTMT = 50,
+  WHILESTMT = 51,
+  VARDECL = 52,
+  DIGIT = 53,
+  TYPE = 54,
+  ASSIGNSTMT = 55,
 };
 
 union TokenValue {

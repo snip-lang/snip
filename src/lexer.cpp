@@ -298,7 +298,20 @@ void Lexer::tokenize(std::unique_ptr<TokenChunk[]> &token_stack) {
           i++;
           read_next();
           break;
-        case '*':
+        case ':':
+          if (this->current_token_ptr != 0) {
+            this->current_token[this->current_token_ptr] = '\0';
+            retToken = get_token();
+            this->current_token[0] = '\0';
+            this->current_token_ptr = 0;
+            insert_into_linked_list(head, retToken, this->num_tokens);
+          }
+          retToken = {Token::COLON, ","};
+          insert_into_linked_list(head, retToken, this->num_tokens);
+          i++;
+          read_next();
+          break;
+          case '*':
           if (this->current_token_ptr != 0) {
             this->current_token[this->current_token_ptr] = '\0';
             retToken = get_token();

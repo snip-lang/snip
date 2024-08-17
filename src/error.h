@@ -1,8 +1,8 @@
 #include <iostream>
 #include <string>
 
+enum class Severity { WARN, CRITICAL, ERROR };
 class Error {
-  enum class Severity { WARN, CRITICAL, ERROR };
 
 public:
   Error(const std::string &message, int code = 0,
