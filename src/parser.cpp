@@ -32,7 +32,6 @@ ParserTokenChunk tc_to_ptc(const TokenChunk &tc) {
 
 struct OutputQueueNode {
   std::unique_ptr<PTNode> node = nullptr;
-  ParserTokenChunk *ptc = nullptr;
   OutputQueueNode *next = nullptr;
 };
 
@@ -47,6 +46,7 @@ void add_sym_to_output_queue(std::unique_ptr<OutputQueue> &queue,
                              ParserTokenChunk &sym) {
   OutputQueueNode *new_node = new OutputQueueNode;
   new_node->node = std::make_unique<PTNode>(sym);
+  // TODO: add different types of PTNode like expr, number
   if (queue->tail == nullptr) {
     queue->tail = new_node;
     queue->head = new_node;
@@ -101,7 +101,6 @@ void add_op_to_stack(std::unique_ptr<OperatorStack> &stack,
   if (stack->head->ptc == nullptr) {
     stack->head = new OperatorStackNode;
     stack->head->ptc = &op;
-  } else {
     OperatorStackNode *new_node = new OperatorStackNode;
     new_node->ptc = &op;
     stack->head->next = new_node;
@@ -194,8 +193,8 @@ void PTNode::add_child(PTNode *child) {
 }
 
 PTNode::~PTNode() { // NOTE: pointless
-  delete this->first_child;
-  delete this->next_sibling;
+  delete first_child;
+  delete next_sibling;
 }
 
 PTNode::PTNode(ParserTokenChunk tok) {
@@ -239,92 +238,185 @@ TokenChunk Parser::peek(int k) const { return this->token_stream[_ptr + k]; }
 
 TokenChunk Parser::get() const noexcept { return this->token_stream[_ptr]; }
 
-void Parser::parse_stmt() {} // TODO:
+PTNode *Parser::parse_stmts() {
+  PTNode *stmts = new PTNode(this->ptcs.stmts);
+  if (this->get().type != Token::LEFTBRACE) {
+    return nullptr; // TODO: consider allowing singular stmts without braces
+  }
+  stmts->add_child(new PTNode(this->ptcs.left_paren));
+  this->next();
+  while (this->get().type != Token::RIGHTBRACE) {
+    PTNode *stmt = this->parse_stmt();
+    stmts->add_child(stmt);
+  }
+  this->next();
+  stmts->add_child(new PTNode(this->ptcs.right_paren));
+  return stmts;
+}
 
-PTNode *Parser::parse_expr() { // TODO: parse output queue
-  PTNode *expression = new PTNode(this->ptcs.expr);
+PTNode *Parser::parse_stmt() {
+  PTNode *stmt{new PTNode(this->ptcs.if_stmt)};
+  if (this->get().type != Token::LEFTBRACE) {
+    return nullptr;
+  }
+  this->get();
+  switch (this->get().type) {
+  case Token::IF:
+    stmt->add_child(this->parse_if_stmt());
+    break;
+  case Token::WHILE:
+    stmt->add_child(this->parse_while_stmt());
+  case Token::INTK:
+  case Token::CHARK:
+  case Token::DOUBLEK:
+  case Token::STRINGK:
+    if (this->peek().type == Token::IDENTIFIER) {
+      stmt->add_child(this->parse_var_decl());
+    }
+    break;
+  case Token::IDENTIFIER:
+    if (this->peek().type == Token::ASSIGN) {
+      stmt->add_child(this->parse_assignment());
+    }
+    // TODO: think of other cases
+    break;
+  default:
+    throw std::runtime_error("Stmt type not recognized");
+    break;
+  }
+  stmt->add_child(this->ptcs.semicolon);
+  return stmt;
+}
+
+PTNode *Parser::parse_assignment() {
+  PTNode *assignment = new PTNode(this->ptcs.assignstmt);
+  ParserTokenChunk ident = {ParserToken::IDENTIFIER, this->get().value};
+  assignment->add_child(new PTNode(ident));
+  this->next();
+  PTNode *assign = new PTNode(this->ptcs.assign);
+  assignment->add_child(assign);
+  this->next();
+  PTNode *expr = this->parse_expr();
+  if (expr == nullptr) {
+    std::runtime_error("parse_assignment() expects an expression");
+  }
+  if (this->get().type != Token::SEMICOLON) {
+    Error("Assignment statement expects a semicolon", 0, Severity::ERROR,
+          __FILE__, __LINE__);
+  }
+  assignment->add_child(expr);
+  assignment->add_child(this->ptcs.semicolon);
+  return assignment;
+}
+
+PTNode *Parser::parse_expr() {
+  PTNode *expression{new PTNode(this->ptcs.expr)};
+  bool parenthesised{false};
+  PTNode *temp = nullptr;
+  TokenChunk current;
+  ParserTokenChunk ptc;
+  std::unique_ptr<OutputQueue> output_q = std::make_unique<OutputQueue>();
+  auto op_stack = std::make_unique<OperatorStack>();
   if (this->get().type == Token::LEFTPARENTHESIS) {
     this->next();
+    parenthesised = true;
     expression->add_child(this->ptcs.left_paren);
-    PTNode *temp = nullptr;
-    auto current = this->get();
-    ParserTokenChunk ptc = tc_to_ptc(current);
-    std::unique_ptr<OutputQueue> output_q = std::make_unique<OutputQueue>();
-    auto op_stack = std::make_unique<OperatorStack>();
-    while (this->get().type != Token::RIGHTPARENTHESIS) {
-      switch (current.type) {
-      case Token::LEFTPARENTHESIS:
-        temp = this->parse_expr();
-        expression->add_child(temp);
-        break;
-      case Token::INT:
-      case Token::DOUBLE:
-      case Token::IDENTIFIER:
-        add_sym_to_output_queue(output_q, ptc);
-        break;
-      default:
-        // TODO: add fn calls, and comma support for factors in fn calls
-        if (op_stack->head == nullptr) {
-          add_op_to_stack(op_stack, ptc);
-          break;
-        }
-        while (token_type_to_precedence(op_stack->head->ptc->type) >=
-               token_type_to_precedence(ptc.type)) {
-          // pop from stack, create a node with its operands, and add to output
-          // queue
-          auto op = *pop_from_stack(op_stack);
-          auto right = pop_from_output_queue(output_q);
-          auto left = pop_from_output_queue(output_q);
-          if (left == nullptr || right == nullptr) {
-            throw std::runtime_error(
-                "binop in parse_expr() expects left and right");
-          }
-          PTNode *op_node = new PTNode(op);
-          PTNode *left_node = left.release();
-          PTNode *right_node = right.release();
-          op_node->add_child(left_node);
-          op_node->add_child(right_node);
-
-          add_node_to_output_queue(output_q, op_node);
-        }
+  }
+  while (this->get().type != Token::RIGHTPARENTHESIS &&
+         this->get().type != Token::SEMICOLON &&
+         this->get().type != Token::COMMA) {
+    current = this->get();
+    ptc = tc_to_ptc(current);
+    switch (current.type) {
+    case Token::LEFTPARENTHESIS:
+      temp = this->parse_expr();
+      expression->add_child(temp);
+      break;
+    case Token::INT:
+    case Token::DOUBLE:
+    case Token::IDENTIFIER:
+    case Token::ADD:
+    case Token::SUBTRACT:
+    case Token::MULTIPLY:
+    case Token::DIVIDE:
+      add_sym_to_output_queue(output_q, ptc);
+      break;
+    default:
+      // TODO: add fn calls, and comma support for factors in fn calls
+      if (op_stack->head == nullptr) {
         add_op_to_stack(op_stack, ptc);
         break;
       }
-      this->next();
+      while (token_type_to_precedence(op_stack->head->ptc->type) >=
+             token_type_to_precedence(ptc.type)) {
+        // pop from stack, create a node with its operands, and add to output
+        // queue
+        auto op = *pop_from_stack(op_stack);
+        auto right = pop_from_output_queue(output_q);
+        auto left = pop_from_output_queue(output_q);
+        if (left == nullptr || right == nullptr) {
+          throw std::runtime_error(
+              "binop in parse_expr() expects left and right");
+        }
+        PTNode *op_node = new PTNode(op);
+        PTNode *left_node = left.release();
+        PTNode *right_node = right.release();
+        op_node->add_child(left_node);
+        op_node->add_child(right_node);
+        add_node_to_output_queue(output_q, op_node);
+      }
+      add_op_to_stack(op_stack, ptc);
+      break;
     }
-    while (op_stack->head != nullptr) {
-      add_sym_to_output_queue(output_q, *pop_from_stack(op_stack));
-    }
-    while (output_q->head != nullptr) {
-      auto node = pop_from_output_queue(output_q);
-      expression->add_child(node.release());
-    }
+    this->next();
   }
-  expression->add_child(this->ptcs.right_paren);
+  while (op_stack->head != nullptr) {
+    add_sym_to_output_queue(output_q, *pop_from_stack(op_stack));
+  }
+  while (output_q->head != nullptr) {
+    auto node = pop_from_output_queue(output_q);
+    expression->add_child(node.release());
+  }
+  if (parenthesised) {
+    if (this->get().type == Token::RIGHTPARENTHESIS) {
+      expression->add_child(this->ptcs.right_paren);
+      this->next();
+    } else
+      throw std::runtime_error("Missing closing ')'");
+  }
+
   return expression;
 }
 
 PTNode *Parser::parse_if_stmt() {
   PTNode *if_stmt = new PTNode(this->ptcs.if_stmt);
   this->next();
-  PTNode *cond = this->parse_expr(); // TODO:
+  PTNode *cond = this->parse_expr();
   if (cond == nullptr) {
     throw std::runtime_error("parse_if_stmt() expects condition");
   }
-  this->next();
-  if (this->get().type == Token::LEFTBRACE) {
-    this->parse_stmt();
-    if (this->get().type == Token::RIGHTBRACE) {
-    }
+  PTNode *block = this->parse_stmts();
+  if (block == nullptr) {
+    throw std::runtime_error("parse_if_stmt() expects block");
   }
+  if_stmt->add_child(cond);
+  if_stmt->add_child(block);
   return if_stmt;
 }
 
 PTNode *Parser::parse_while_stmt() {
   PTNode *while_stmt = new PTNode(this->ptcs.while_stmt);
+  assert(this->get().type == Token::WHILE);
+  while_stmt->add_child(new PTNode(this->ptcs.while_stmt));
   this->next();
-  this->parse_expr();
+  PTNode *expr = this->parse_expr();
+  if (expr == nullptr) {
+    throw std::runtime_error("while() requires an expression");
+  }
+  while_stmt->add_child(expr);
   this->next();
+  PTNode *stmts = this->parse_stmts();
+  while_stmt->add_child(stmts);
   return while_stmt;
 }
 
@@ -333,25 +425,22 @@ PTNode *Parser::parse_var_decl() {
   assert((this->get().type == Token::INTK || this->get().type == Token::CHARK ||
           this->get().type == Token::DOUBLEK ||
           this->get().type == Token::STRINGK));
-
   ParserTokenChunk type_k = {token_to_parser_token(this->get().type),
                              this->get().value};
   var_decl->add_child(new PTNode(type_k));
   this->next();
-
   ParserTokenChunk ident_ptc = {token_to_parser_token(this->get().type),
                                 this->get().value};
   var_decl->add_child(new PTNode(ident_ptc));
   this->next();
-
   if (this->get().type == Token::ASSIGN) {
     var_decl->add_child(new PTNode(this->ptcs.assign));
     this->next();
-
     var_decl->add_child(this->parse_expr());
-    this->next();
   }
-
+  if (this->get().type != Token::SEMICOLON) {
+    throw std::runtime_error("Variable declaration expects a semicolon");
+  }
   var_decl->add_child(new PTNode(this->ptcs.semicolon));
   this->next();
   return var_decl;
@@ -365,16 +454,16 @@ void Parser::parse(std::unique_ptr<PTNode> &head) {
   while (this->token_stream[_ptr].type != Token::END) {
     switch (this->get().type) {
     case Token::IF:
-      this->parse_if_stmt();
+      this->head->add_child(this->parse_if_stmt());
       break;
     case Token::WHILE:
-      this->parse_while_stmt();
+      this->head->add_child(this->parse_while_stmt());
     case Token::INTK:
     case Token::CHARK:
     case Token::DOUBLEK:
     case Token::STRINGK:
       if (this->peek().type == Token::IDENTIFIER) {
-        this->parse_var_decl();
+        this->head->add_child(this->parse_var_decl());
       }
       break;
     default:
@@ -383,4 +472,6 @@ void Parser::parse(std::unique_ptr<PTNode> &head) {
   }
   ParserTokenChunk end = {ParserToken::END, ""};
   this->head->add_sibling(end);
+  this->head->print(2);
+  delete this->head;
 }

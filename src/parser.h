@@ -14,12 +14,15 @@ struct StmtPTCs {
   ParserTokenChunk fn_decl = {ParserToken::FNDECL, ""};
   ParserTokenChunk var_decl = {ParserToken::VARDECL, ""};
   ParserTokenChunk assign = {ParserToken::ASSIGN, ""};
+  ParserTokenChunk assignstmt = {ParserToken::ASSIGNSTMT, ""};
   ParserTokenChunk add = {ParserToken::ADD, ""};
   ParserTokenChunk subtract = {ParserToken::SUBTRACT, ""};
   ParserTokenChunk multiply = {ParserToken::MULTIPLY, ""};
   ParserTokenChunk divide = {ParserToken::DIVIDE, ""};
   ParserTokenChunk left_paren = {ParserToken::LEFTPARENTHESIS, ""};
   ParserTokenChunk right_paren = {ParserToken::RIGHTPARENTHESIS, ""};
+  ParserTokenChunk stmt = {ParserToken::STMT, ""};
+  ParserTokenChunk stmts = {ParserToken::STMTS, ""};
 };
 
 class PTNode {
@@ -56,8 +59,8 @@ public:
   TokenChunk get() const noexcept;
   void next();
   void parse(std::unique_ptr<PTNode> &head);
-  void parse_stmt();
-  void add_node();
+  PTNode *parse_stmt();
+  PTNode *parse_stmts();
   void shunting_yard();
 
 private:
@@ -66,6 +69,8 @@ private:
   PTNode *parse_if_stmt();
   PTNode *parse_while_stmt();
   PTNode *parse_var_decl();
+  PTNode *parse_fn_decl();
+  PTNode *parse_assignment();
   int _ptr = 0;
   PTNode *head = nullptr;
   // make a list of const nodes that can be used to initialize to when parsing,
