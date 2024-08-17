@@ -21,6 +21,8 @@ struct StmtPTCs {
   ParserTokenChunk divide = {ParserToken::DIVIDE, ""};
   ParserTokenChunk left_paren = {ParserToken::LEFTPARENTHESIS, ""};
   ParserTokenChunk right_paren = {ParserToken::RIGHTPARENTHESIS, ""};
+  ParserTokenChunk left_brace = {ParserToken::LEFTBRACE, ""};
+  ParserTokenChunk right_brace = {ParserToken::RIGHTBRACE, ""};
   ParserTokenChunk stmt = {ParserToken::STMT, ""};
   ParserTokenChunk stmts = {ParserToken::STMTS, ""};
 };

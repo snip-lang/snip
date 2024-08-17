@@ -243,14 +243,14 @@ PTNode *Parser::parse_stmts() {
   if (this->get().type != Token::LEFTBRACE) {
     return nullptr; // TODO: consider allowing singular stmts without braces
   }
-  stmts->add_child(new PTNode(this->ptcs.left_paren));
+  stmts->add_child(new PTNode(this->ptcs.left_brace));
   this->next();
   while (this->get().type != Token::RIGHTBRACE) {
     PTNode *stmt = this->parse_stmt();
     stmts->add_child(stmt);
   }
   this->next();
-  stmts->add_child(new PTNode(this->ptcs.right_paren));
+  stmts->add_child(new PTNode(this->ptcs.right_brace));
   return stmts;
 }
 
@@ -310,8 +310,9 @@ PTNode *Parser::parse_assignment() {
 }
 
 PTNode *Parser::parse_expr() {
-  PTNode *expression{new PTNode(this->ptcs.expr)};
-  bool parenthesised{false};
+  PTNode *expr{new PTNode(this->ptcs.expr)};
+  PTNode *parens = nullptr;
+  PTNode *expression = nullptr;
   PTNode *temp = nullptr;
   TokenChunk current;
   ParserTokenChunk ptc;
@@ -319,9 +320,9 @@ PTNode *Parser::parse_expr() {
   auto op_stack = std::make_unique<OperatorStack>();
   if (this->get().type == Token::LEFTPARENTHESIS) {
     this->next();
-    parenthesised = true;
-    expression->add_child(this->ptcs.left_paren);
+    parens = new PTNode(this->ptcs.left_paren);
   }
+  expression = (parens == nullptr) ? expr : parens;
   while (this->get().type != Token::RIGHTPARENTHESIS &&
          this->get().type != Token::SEMICOLON &&
          this->get().type != Token::COMMA) {
@@ -334,6 +335,7 @@ PTNode *Parser::parse_expr() {
       break;
     case Token::INT:
     case Token::DOUBLE:
+    case Token::STRING:
     case Token::IDENTIFIER:
     case Token::ADD:
     case Token::SUBTRACT:
@@ -359,10 +361,8 @@ PTNode *Parser::parse_expr() {
               "binop in parse_expr() expects left and right");
         }
         PTNode *op_node = new PTNode(op);
-        PTNode *left_node = left.release();
-        PTNode *right_node = right.release();
-        op_node->add_child(left_node);
-        op_node->add_child(right_node);
+        op_node->add_child(left.release());
+        op_node->add_child(right.release());
         add_node_to_output_queue(output_q, op_node);
       }
       add_op_to_stack(op_stack, ptc);
@@ -377,15 +377,17 @@ PTNode *Parser::parse_expr() {
     auto node = pop_from_output_queue(output_q);
     expression->add_child(node.release());
   }
-  if (parenthesised) {
+  if (parens == nullptr) {
+  } else {
     if (this->get().type == Token::RIGHTPARENTHESIS) {
-      expression->add_child(this->ptcs.right_paren);
+      parens->add_sibling(this->ptcs.right_paren);
+      expr->add_child(parens);
       this->next();
     } else
       throw std::runtime_error("Missing closing ')'");
   }
 
-  return expression;
+  return expr;
 }
 
 PTNode *Parser::parse_if_stmt() {
