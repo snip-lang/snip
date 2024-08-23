@@ -6,6 +6,11 @@
 
 #ifndef LEXER
 
+struct token_node {
+  TokenChunk tok;
+  token_node *next = nullptr;
+};
+
 class Lexer {
 public:
   Lexer() = default;
@@ -14,6 +19,8 @@ public:
   void read_next(int) noexcept;
   TokenChunk get_token();
   void tokenize(std::unique_ptr<TokenChunk[]> &token_stack);
+  void process_literal_token(TokenChunk &, token_node *&);
+  void process_token(token_node *&);
 
 private:
   std::string input = "";
