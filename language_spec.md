@@ -7,8 +7,9 @@
 <start> ::= <stmt> | <end>
 <var_decl> ::= <identifier> <type> (= <expr>)? <semicolon>
 <fn_decl> ::= "fn" <identifier> ":" <type> <lparen><rparen> <type> {<stmt>} end
+<fn_call> ::= "!" <identifier> ( <factor> ) <semicolon>
 <if_stmt> ::= "if" <expr> then <lbrace> <stmt> <rbrace> end
-<while_stmt> ::= "while" <expr> do <lbrace> <stmt> <rbrace> end
+<nwhile_stmt> ::= "while" <expr> do <lbrace> <stmt> <rbrace> end
 <stmt> ::= <stmt> <stmt>
         | <if_stmt>
         | <var_decl>

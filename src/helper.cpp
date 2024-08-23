@@ -22,7 +22,7 @@ const std::string token_to_string(const Token &tok) {
     return "DOUBLE";
   case Token::DOUBLEK:
     return "DOUBLEK";
-  case Token::FUNCTION:
+  case Token::FN:
     return "FUNCTION";
   case Token::STRING:
     return "STRING";
@@ -78,6 +78,8 @@ const std::string token_to_string(const Token &tok) {
     return "GREATERTHANEQUAL";
   case Token::SEMICOLON:
     return "SEMICOLON";
+  case Token::COLON:
+    return "COLON";
   case Token::AND:
     return "AND";
   case Token::OR:
@@ -98,6 +100,8 @@ const std::string token_to_string(const Token &tok) {
     return "NONE";
   case Token::START:
     return "START";
+  case Token::FACTOR:
+    return "FACTOR";
   default:
     return "no token, somehow";
   }
@@ -115,11 +119,13 @@ const std::string token_to_string(const ParserToken &tok) {
     return "ELIF";
   case ParserToken::INT:
     return "INT";
+  case ParserToken::FACTOR:
+    return "FACTOR";
   case ParserToken::DOUBLE:
     return "DOUBLE";
   case ParserToken::DOUBLEK:
     return "DOUBLEK";
-  case ParserToken::FUNCTION:
+  case ParserToken::FN:
     return "FUNCTION";
   case ParserToken::STRING:
     return "STRING";
@@ -167,6 +173,8 @@ const std::string token_to_string(const ParserToken &tok) {
     return "GREATERTHANEQUAL";
   case ParserToken::SEMICOLON:
     return "SEMICOLON";
+  case ParserToken::COLON:
+    return "COLON";
   case ParserToken::AND:
     return "AND";
   case ParserToken::OR:
@@ -284,9 +292,7 @@ bool get_flags(const int &argc, char *argv[], std::string &filename,
       parseString = argv[2];
     }
   }
-  int ind = 0;
   char *currentFlag;
-  char *currentOption;
   bool isTest{false};
   for (int count{0}; count < argc; count++) {
     if (count % 2) {

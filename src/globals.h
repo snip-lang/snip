@@ -6,6 +6,9 @@
 
 enum class Token {
   COLON = -1,
+  FACTOR = -2,
+  FNCALL = -3,
+  EXCLAIM = -4,
   UNDEFINED = 0,
   SEMICOLON = 1,
   IF = 2,
@@ -16,7 +19,7 @@ enum class Token {
   DOUBLEK = 7,
   TRUEK = 8,
   FALSEK = 9,
-  FUNCTION = 10,
+  FN = 10,
   STRING = 11,
   CHARK = 12,
   CHAR = 13,
@@ -69,6 +72,9 @@ enum OperatorPrecedence {
 
 enum class ParserToken {
   COLON = -1,
+  FACTOR = -2,
+  FNCALL = -3,
+  EXCLAIM = -4,
   UNDEFINED = 0,
   SEMICOLON = 1,
   IF = 2,
@@ -79,7 +85,7 @@ enum class ParserToken {
   DOUBLEK = 7,
   TRUEK = 8,
   FALSEK = 9,
-  FUNCTION = 10,
+  FN = 10,
   STRING = 11,
   CHARK = 12,
   CHAR = 13,
