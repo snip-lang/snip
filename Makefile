@@ -2,7 +2,7 @@ SRC_DIR = src
 TEST_DIR = tests
 BUILD_DIR = build
 TEST_BUILD_DIR = tbuild 
-SOURCE = $(SRC_DIR)/lexer.cpp $(SRC_DIR)/parser.cpp $(SRC_DIR)/helper.cpp
+SOURCE = $(SRC_DIR)/lexer.cpp $(SRC_DIR)/parser.cpp $(SRC_DIR)/helper.cpp $(SRC_DIR)/error.cpp
 DRIVER_SOURCE = $(SRC_DIR)/main.cpp
 TEST_SOURCE = $(TEST_DIR)/test.cpp $(TEST_DIR)/test_parser.cpp
 EXECUTABLE = snip
@@ -37,6 +37,7 @@ debug: $(SOURCE) $(DRIVER_SOURCE)
 	@g++ -g -o $(DEBUG_EXECUTABLE) $(SOURCE) $(DRIVER_SOURCE) 
 
 run: $(EXECUTABLE)
+	etags $(SRC_DIR)/*.cpp
 	@./$(EXECUTABLE)
 
 test: $(TEST_OBJECTS) $(patsubst $(SRC_DIR)/%.cpp, $(TEST_BUILD_DIR)/%.o, $(SOURCE))
