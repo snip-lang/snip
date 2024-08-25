@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
   if (isTest) {
     writeFile(test_filename, print_lexed_tokens_test(token_stack));
   } else {
-    print_lexed_tokens(token_stack);
+    // print_lexed_tokens(token_stack);
   }
 
   Parser parser(token_stack);

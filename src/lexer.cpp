@@ -233,7 +233,13 @@ void Lexer::tokenize(std::unique_ptr<TokenChunk[]> &token_stack) {
         this->read_next();
       } else {
         TokenChunk retToken;
-        switch (this->input[this->ptr]) { // check for literals
+        switch (this->input[this->ptr]) {
+        case '#': // comments
+          while (this->input[this->ptr] != '\n') {
+            i++;
+            this->read_next();
+          }
+          break;
         case '{':
           retToken = {Token::LEFTBRACE, "{"};
           this->process_token(head);
@@ -277,6 +283,7 @@ void Lexer::tokenize(std::unique_ptr<TokenChunk[]> &token_stack) {
           i++;
           break;
         case '!':
+          std::exit(0);
           retToken = {Token::EXCLAIM, "!"};
           this->process_token(head);
           this->process_literal_token(retToken, head);
