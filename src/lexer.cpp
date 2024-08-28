@@ -283,7 +283,6 @@ void Lexer::tokenize(std::unique_ptr<TokenChunk[]> &token_stack) {
           i++;
           break;
         case '!':
-          std::exit(0);
           retToken = {Token::EXCLAIM, "!"};
           this->process_token(head);
           this->process_literal_token(retToken, head);
@@ -487,6 +486,39 @@ TokenChunk Lexer::get_token() {
       } else {
         currentState = State::IDENTIFIER;
         // i++ handled in identifier case
+      }
+      break;
+    case State::ELSE_1:
+      if (this->current_token[i] == 'l') {
+        currentState = State::ELSE_2;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::ELSE_2:
+      if (this->current_token[i] == 's') {
+        currentState = State::ELSE_3;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::ELSE_3:
+      if (this->current_token[i] == 'e') {
+        currentState = State::ELSE_4;
+        i++;
+      } else {
+        currentState = State::IDENTIFIER;
+      }
+      break;
+    case State::ELSE_4:
+      if (this->current_token[i] == '\0') {
+        currentState = State::END;
+        retToken = Token::ELSE;
+        i--;
+      } else {
+        currentState = State::IDENTIFIER;
       }
       break;
     case State::INTK_2:
