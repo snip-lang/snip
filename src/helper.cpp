@@ -1,4 +1,5 @@
 #include "globals.h"
+#include "parser.h"
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -256,6 +257,10 @@ void print_lexed_tokens(std::unique_ptr<TokenChunk[]> &token_stack) {
     i++;
   }
   std::cout << token_to_string(token_stack[i].type) << std::endl;
+}
+
+void print_parsed_tokens(std::unique_ptr<PTNode> &token_stack) {
+  token_stack->print(0);
 }
 
 std::string

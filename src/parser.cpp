@@ -530,7 +530,6 @@ PTNode *Parser::parse_expr() {
       add_sym_to_output_queue(output_q, ptc);
       break;
     default:
-      // TODO: add fn calls
       if (op_stack->head == nullptr) {
         add_op_to_stack(op_stack, ptc);
         break;
@@ -644,7 +643,5 @@ void Parser::parse(std::unique_ptr<PTNode> &head) {
   this->parse_body(this->head);
   ParserTokenChunk end = {ParserToken::END, ""};
   this->head->add_sibling(end);
-  this->head->print(2);
-  delete this->head;
-  // TODO: return the parse tree
+  head = std::unique_ptr<PTNode>(this->head);
 }
