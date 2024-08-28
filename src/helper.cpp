@@ -102,6 +102,8 @@ const std::string token_to_string(const Token &tok) {
     return "START";
   case Token::FACTOR:
     return "FACTOR";
+  case Token::EXCLAIM:
+    return "EXCLAIM";
   default:
     return "no token, somehow";
   }
@@ -111,6 +113,10 @@ const std::string token_to_string(const ParserToken &tok) {
   switch (tok) {
   case ParserToken::UNDEFINED:
     return "UNDEFINED";
+  case ParserToken::FNCALL:
+    return "FNCALL";
+  case ParserToken::EXCLAIM:
+    return "EXCLAIM";
   case ParserToken::IF:
     return "IF";
   case ParserToken::ELSE:
@@ -225,6 +231,10 @@ const std::string token_to_string(const ParserToken &tok) {
     return "FNDECL";
   case ParserToken::BINOP:
     return "BINOP";
+  case ParserToken::FORMAL:
+    return "FORMAL";
+  case ParserToken::VARIABLE:
+    return "VARIABLE";
   default:
     return "no token, somehow";
   }

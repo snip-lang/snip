@@ -8,6 +8,7 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <type_traits>
 
@@ -150,6 +151,38 @@ void PTNode::print(const int spaces) {
   }
 }
 
+PTNode *PTNode::get_first_child() {
+  return (this->first_child == nullptr) ? nullptr : this->first_child;
+}
+
+PTNode *PTNode::get_next_sibling() {
+  return (this->next_sibling == nullptr) ? nullptr : this->next_sibling;
+}
+
+const std::string PTNode::get_type() {
+  return token_to_string(this->val->type);
+}
+
+void output_nodes_recursively(const int spaces, PTNode *node,
+                              std::stringstream &ss) {
+  if (node == nullptr) {
+    return;
+  }
+  for (int i = 0; i < spaces; i++) {
+    ss << " ";
+  }
+  ss << node->get_type() << std::endl;
+  output_nodes_recursively(spaces + 2, node->get_first_child(), ss);
+  output_nodes_recursively(spaces, node->get_next_sibling(), ss);
+}
+
+// output the parse tree as a string
+std::string PTNode::output() {
+  std::stringstream ss;
+  output_nodes_recursively(0, this, ss);
+  return ss.str();
+}
+
 void PTNode::add_child(ParserTokenChunk &tok) {
   if (this->last_child != nullptr) {
     this->last_child->add_sibling(tok);
@@ -171,7 +204,6 @@ void PTNode::add_sibling(ParserTokenChunk &tok) {
     this->next_sibling->prev_sibling = this;
   }
 }
-
 void PTNode::add_sibling(PTNode *sibling) {
   if (this->next_sibling != nullptr) {
     this->next_sibling->add_sibling(sibling);
@@ -241,25 +273,171 @@ TokenChunk Parser::get() const noexcept { return this->token_stream[_ptr]; }
 PTNode *Parser::parse_stmts() {
   PTNode *stmts = new PTNode(this->ptcs.stmts);
   if (this->get().type != Token::LEFTBRACE) {
-    return nullptr; // TODO: consider allowing singular stmts without braces
+    throw std::runtime_error("parse_stmts() expects a left brace, statements "
+                             "without braces are not supported yet");
+    return nullptr; // TODO: stmts without braces
   }
-  stmts->add_child(new PTNode(this->ptcs.left_brace));
+  PTNode *braces = new PTNode(this->ptcs.left_brace);
   this->next();
   while (this->get().type != Token::RIGHTBRACE) {
     PTNode *stmt = this->parse_stmt();
-    stmts->add_child(stmt);
+    braces->add_child(stmt);
   }
   this->next();
+  stmts->add_child(braces);
   stmts->add_child(new PTNode(this->ptcs.right_brace));
   return stmts;
 }
 
-PTNode *Parser::parse_stmt() {
-  PTNode *stmt{new PTNode(this->ptcs.if_stmt)};
-  if (this->get().type != Token::LEFTBRACE) {
-    return nullptr;
+void Parser::parse_body(PTNode *start_token) {
+  while (this->get().type != Token::END) {
+    PTNode *stmt = this->parse_stmt();
+    if (stmt == nullptr) {
+      throw std::runtime_error("stmt is someow null");
+    }
+    start_token->add_child(stmt);
   }
-  this->get();
+}
+
+bool is_type(const Token tok) {
+  return (tok == Token::INTK || tok == Token::BOOLK || tok == Token::STRINGK ||
+          tok == Token::CHARK);
+}
+
+// Type <identifier>
+PTNode *Parser::parse_variable() {
+  PTNode *variable = new PTNode(this->ptcs.variable);
+  if (!is_type(this->get().type)) {
+    throw std::runtime_error("parse_variable() expects a type");
+  }
+  ParserTokenChunk type = {token_to_parser_token(this->get().type),
+                           this->get().value};
+  variable->add_child(type);
+  this->next();
+  if (this->get().type != Token::IDENTIFIER) {
+    throw std::runtime_error("parse_variable() expects an identifier");
+  }
+  ParserTokenChunk ident = {token_to_parser_token(this->get().type),
+                            this->get().value};
+  variable->add_child(ident);
+  return variable;
+}
+
+// ( <variable> (, <variable>*) )
+PTNode *Parser::parse_formal() {
+  PTNode *formal = new PTNode(this->ptcs.formal);
+  if (this->get().type != Token::LEFTPARENTHESIS) {
+    throw std::runtime_error("formal expects a left parenthesis");
+  }
+  this->next();
+  formal->add_child(this->ptcs.left_paren);
+  while (this->get().type != Token::RIGHTPARENTHESIS) {
+    if (this->get().type == Token::COMMA) {
+      this->next();
+      continue;
+    }
+    PTNode *variable = this->parse_variable();
+    if (variable == nullptr) {
+      throw std::runtime_error("formal expects a left parenthesis");
+    }
+    formal->add_child(variable);
+    this->next();
+  }
+  return formal;
+}
+
+// ( <expr> (, <expr>)* )
+PTNode *Parser::parse_factor() {
+  PTNode *factor = new PTNode(this->ptcs.factor);
+  if (this->get().type != Token::LEFTPARENTHESIS) {
+    throw std::runtime_error("factor expects a left parenthesis");
+  }
+  factor->add_child(this->ptcs.left_paren);
+  this->next();
+  while (this->get().type != Token::RIGHTPARENTHESIS) {
+    if (this->get().type == Token::COMMA) {
+      this->next();
+      continue;
+    }
+    PTNode *expr = this->parse_expr();
+    if (expr == nullptr) {
+      throw std::runtime_error("factor expects an expr");
+    }
+    factor->add_child(expr);
+  }
+  factor->add_child(this->ptcs.right_paren);
+  return factor;
+}
+
+// <fn> <identifier> : <type> (formal) <stmts>
+PTNode *Parser::parse_fn_decl() {
+  PTNode *fn_decl{new PTNode(this->ptcs.fn_decl)};
+  fn_decl->add_child(this->ptcs.fn);
+  this->next();
+  ParserTokenChunk ident_ptc = {token_to_parser_token(this->get().type),
+                                this->get().value};
+  if (ident_ptc.type != ParserToken::IDENTIFIER) {
+    throw std::runtime_error(
+        "Function name in function declaration is not an identifier");
+  }
+
+  this->next();
+  PTNode *ident = new PTNode(ident_ptc);
+  fn_decl->add_child(ident);
+
+  if (this->get().type != Token::COLON) {
+    Error("Invalid function declaration syntax").logError();
+  }
+
+  fn_decl->add_child(this->ptcs.colon);
+  this->next();
+
+  if (!is_type(this->get().type)) {
+    Error("Invalid type specifier in function declaration").logError();
+  }
+  ParserTokenChunk fn_type_ptc = {token_to_parser_token(this->get().type), ""};
+  fn_decl->add_child(fn_type_ptc);
+  this->next();
+
+  fn_decl->add_child(this->parse_formal());
+  this->next();
+
+  PTNode *block = this->parse_stmts();
+  if (block == nullptr) {
+    Error("function declaration body is undefined:").logError();
+  }
+  fn_decl->add_child(block);
+
+  return fn_decl;
+}
+
+// ! <identifier>  (<factor>) ;
+PTNode *Parser::parse_fn_call() {
+  PTNode *fn_call = new PTNode(this->ptcs.fn_call);
+  fn_call->add_child(this->ptcs.exclam);
+  this->next();
+  ParserTokenChunk ident_ptc = {token_to_parser_token(this->get().type),
+                                this->get().value};
+  if (ident_ptc.type != ParserToken::IDENTIFIER) {
+    throw std::runtime_error(
+        "Function name in function call is not an identifier");
+  }
+  this->next();
+  if (this->get().type != Token::LEFTPARENTHESIS) {
+    throw std::runtime_error("Function call expects a left parenthesis");
+  }
+  PTNode *factor = this->parse_factor();
+  fn_call->add_child(factor);
+  this->next();
+  if (this->get().type == Token::SEMICOLON) {
+    fn_call->add_child(this->ptcs.semicolon);
+  }
+  this->next();
+  return fn_call;
+}
+
+PTNode *Parser::parse_stmt() {
+  PTNode *stmt{new PTNode(this->ptcs.stmt)};
   switch (this->get().type) {
   case Token::IF:
     stmt->add_child(this->parse_if_stmt());
@@ -274,17 +452,25 @@ PTNode *Parser::parse_stmt() {
       stmt->add_child(this->parse_var_decl());
     }
     break;
+  case Token::FN:
+    stmt->add_child(this->parse_fn_decl());
+    break;
+  case Token::EXCLAIM:
+    if (this->peek().type == Token::IDENTIFIER) {
+      stmt->add_child(this->parse_fn_call());
+    } else
+      throw std::runtime_error("Unknown symbol: !");
+    break;
   case Token::IDENTIFIER:
     if (this->peek().type == Token::ASSIGN) {
       stmt->add_child(this->parse_assignment());
-    }
-    // TODO: think of other cases
+    } else
+      throw std::runtime_error("parse() expects a variable declaration");
     break;
   default:
     throw std::runtime_error("Stmt type not recognized");
     break;
   }
-  stmt->add_child(this->ptcs.semicolon);
   return stmt;
 }
 
@@ -344,7 +530,7 @@ PTNode *Parser::parse_expr() {
       add_sym_to_output_queue(output_q, ptc);
       break;
     default:
-      // TODO: add fn calls, and comma support for factors in fn calls
+      // TODO: add fn calls
       if (op_stack->head == nullptr) {
         add_op_to_stack(op_stack, ptc);
         break;
@@ -406,6 +592,7 @@ PTNode *Parser::parse_if_stmt() {
   return if_stmt;
 }
 
+// <while> ( <expr> ) <stmts>
 PTNode *Parser::parse_while_stmt() {
   PTNode *while_stmt = new PTNode(this->ptcs.while_stmt);
   assert(this->get().type == Token::WHILE);
@@ -422,6 +609,7 @@ PTNode *Parser::parse_while_stmt() {
   return while_stmt;
 }
 
+// <type> <identifier> [= <expr>] ;
 PTNode *Parser::parse_var_decl() {
   PTNode *var_decl = new PTNode(this->ptcs.var_decl);
   assert((this->get().type == Token::INTK || this->get().type == Token::CHARK ||
@@ -453,27 +641,10 @@ void Parser::parse(std::unique_ptr<PTNode> &head) {
   ParserTokenChunk start = {ParserToken::START, ""};
   this->head = new PTNode(start);
   this->next();
-  while (this->token_stream[_ptr].type != Token::END) {
-    switch (this->get().type) {
-    case Token::IF:
-      this->head->add_child(this->parse_if_stmt());
-      break;
-    case Token::WHILE:
-      this->head->add_child(this->parse_while_stmt());
-    case Token::INTK:
-    case Token::CHARK:
-    case Token::DOUBLEK:
-    case Token::STRINGK:
-      if (this->peek().type == Token::IDENTIFIER) {
-        this->head->add_child(this->parse_var_decl());
-      }
-      break;
-    default:
-      break;
-    }
-  }
+  this->parse_body(this->head);
   ParserTokenChunk end = {ParserToken::END, ""};
   this->head->add_sibling(end);
   this->head->print(2);
   delete this->head;
+  // TODO: return the parse tree
 }

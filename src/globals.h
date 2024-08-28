@@ -75,6 +75,8 @@ enum class ParserToken {
   FACTOR = -2,
   FNCALL = -3,
   EXCLAIM = -4,
+  FORMAL = -5,
+  VARIABLE = -6,
   UNDEFINED = 0,
   SEMICOLON = 1,
   IF = 2,
