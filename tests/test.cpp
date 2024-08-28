@@ -16,5 +16,7 @@ void TestCase::checkResult() const {
               << "=========" << "FAIL: " << this->name
               << "Expected: " << this->expected
               << "Received: " << this->result_recieved << std::endl;
+  } else {
+    std::cout << "PASS: " << this->name << std::endl;
   }
 }
