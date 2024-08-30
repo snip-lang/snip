@@ -197,7 +197,7 @@ const std::string token_to_string(const ParserToken &tok) {
   case ParserToken::INVALID:
     return "INVALID";
   case ParserToken::END:
-    exit(0);
+    return "END";
   case ParserToken::NONE:
     return "NONE";
   case ParserToken::START:
