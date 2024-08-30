@@ -176,7 +176,9 @@ void output_nodes_recursively(const int spaces, PTNode *node,
   output_nodes_recursively(spaces, node->get_next_sibling(), ss);
 }
 
-// output the parse tree as a string
+std::string Parser::output_tree_as_str() { return this->head->output(); }
+
+// return the parse tree as a string
 std::string PTNode::output() {
   std::stringstream ss;
   output_nodes_recursively(0, this, ss);
@@ -527,6 +529,7 @@ PTNode *Parser::parse_expr() {
     case Token::SUBTRACT:
     case Token::MULTIPLY:
     case Token::DIVIDE:
+    case Token::CHAR:
       add_sym_to_output_queue(output_q, ptc);
       break;
     default:
@@ -643,5 +646,5 @@ void Parser::parse(std::unique_ptr<PTNode> &head) {
   this->parse_body(this->head);
   ParserTokenChunk end = {ParserToken::END, ""};
   this->head->add_sibling(end);
-  head = std::unique_ptr<PTNode>(this->head);
+  head.reset(this->head);
 }

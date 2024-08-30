@@ -41,12 +41,12 @@ public:
   void add_child(ParserTokenChunk &);
   void add_child(PTNode *);
   void add_sibling(ParserTokenChunk &);
-  void add_sibling(PTNode *);
   const std::string get_type();
-  PTNode *get_first_child();
-  PTNode *get_next_sibling();
+  void add_sibling(PTNode *);
   void print(const int);
   std::string output();
+  PTNode *get_first_child();
+  PTNode *get_next_sibling();
 
 private:
   std::unique_ptr<ParserTokenChunk> val = nullptr;
@@ -75,6 +75,7 @@ public:
   PTNode *parse_stmt();
   PTNode *parse_stmts();
   void shunting_yard();
+  std::string output_tree_as_str();
 
 private:
   std::unique_ptr<TokenChunk[]> token_stream;
