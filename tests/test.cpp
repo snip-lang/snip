@@ -13,9 +13,12 @@ void TestCase::checkResult() const {
   if (this->expected != this->result_recieved) {
     std::cout << ""
               << "============================================================="
-              << "=========" << "FAIL: " << this->name
-              << "Expected: " << this->expected
-              << "Received: " << this->result_recieved << std::endl;
+              << "=========" << std::endl
+              << "FAIL: " << this->name << std::endl
+              << "Expected: " << std::endl
+              << this->expected << std::endl
+              << "Received: " << std::endl
+              << this->result_recieved << std::endl;
   } else {
     std::cout << "PASS: " << this->name << std::endl;
   }
