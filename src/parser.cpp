@@ -466,8 +466,9 @@ PTNode *Parser::parse_stmt() {
   case Token::IDENTIFIER:
     if (this->peek().type == Token::ASSIGN) {
       stmt->add_child(this->parse_assignment());
-    } else
+    } else {
       throw std::runtime_error("parse() expects a variable declaration");
+    }
     break;
   default:
     throw std::runtime_error("Stmt type not recognized");
@@ -494,6 +495,7 @@ PTNode *Parser::parse_assignment() {
   }
   assignment->add_child(expr);
   assignment->add_child(this->ptcs.semicolon);
+  this->next();
   return assignment;
 }
 
@@ -519,7 +521,12 @@ PTNode *Parser::parse_expr() {
     switch (current.type) {
     case Token::LEFTPARENTHESIS:
       temp = this->parse_expr();
+      if (temp == nullptr) {
+        throw std::runtime_error("parse_expr() expects an expression");
+      }
       expression->add_child(temp);
+      ptc = {ParserToken::EXPR, ""};
+      add_sym_to_output_queue(output_q, ptc);
       break;
     case Token::INT:
     case Token::DOUBLE:
@@ -556,7 +563,10 @@ PTNode *Parser::parse_expr() {
       add_op_to_stack(op_stack, ptc);
       break;
     }
-    this->next();
+    // TODO: temp fix: look at next() behavior for parse_expr
+    if (temp == nullptr || temp->get_type() != "EXPR") {
+      this->next();
+    }
   }
   while (op_stack->head != nullptr) {
     add_sym_to_output_queue(output_q, *pop_from_stack(op_stack));
