@@ -19,14 +19,15 @@ $(EXECUTABLE): $(OBJECTS) $(DRIVER_OBJECTS)
 	@echo "Building the project..."
 	@g++ -o $(EXECUTABLE) $(OBJECTS) $(DRIVER_OBJECTS)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp $(SOURCE)
 	@echo "Compiling $<..."
 	@g++ -g -c $< -o $@
 
-$(TEST_BUILD_DIR)/%.o: $(TEST_DIR)/%.cpp $(SRC_DIR)/%.cpp
-	@echo "Building the project with debug symbols..."
-	@echo "Compiling $< with debug symbols..."
+$(TEST_BUILD_DIR)/%.o: $(TEST_DIR)/%.cpp $(SOURCE)
+	@echo "Compiling $< ..."
 	@g++ -g -c $< -o $@
+
 
 clean:
 	@echo "Cleaning up..."
@@ -37,11 +38,18 @@ debug: $(SOURCE) $(DRIVER_SOURCE)
 	@g++ -g -o $(DEBUG_EXECUTABLE) $(SOURCE) $(DRIVER_SOURCE) 
 
 run: $(EXECUTABLE)
-	etags $(SRC_DIR)/*.cpp
+	@etags $(SRC_DIR)/*.cpp
 	@./$(EXECUTABLE)
 
-test: $(TEST_OBJECTS) $(patsubst $(SRC_DIR)/%.cpp, $(TEST_BUILD_DIR)/%.o, $(SOURCE))
-	@echo "Building the project with debug symbols..."
-	@g++ -g -o $(TEST_EXECUTABLE) $(OBJECTS) $(TEST_OBJECTS)
+test: $(TEST_SOURCE)
+	@echo "Running tests..."
+	@ g++ -c $(TEST_SOURCE)
+	@ g++ -o $(TEST_EXECUTABLE) $(SOURCE) $(TEST_SOURCE)
+	@./$(TEST_EXECUTABLE)
 
-.PHONY: default clean debug run test test_debug
+test_debug:
+	@echo "Running tests in debug mode..."
+	@ g++ -g -o $(TEST_EXECUTABLE) $(SOURCE) $(TEST_SOURCE)
+	@./$(TEST_EXECUTABLE)
+
+.PHONY: default clean debug run test
