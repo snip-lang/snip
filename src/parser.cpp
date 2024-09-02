@@ -504,6 +504,7 @@ PTNode *Parser::parse_expr() {
   PTNode *parens = nullptr;
   PTNode *expression = nullptr;
   PTNode *temp = nullptr;
+  bool is_expr = false;
   TokenChunk current;
   ParserTokenChunk ptc;
   std::unique_ptr<OutputQueue> output_q = std::make_unique<OutputQueue>();
@@ -513,13 +514,13 @@ PTNode *Parser::parse_expr() {
     parens = new PTNode(this->ptcs.left_paren);
   }
   expression = (parens == nullptr) ? expr : parens;
-  while (this->get().type != Token::RIGHTPARENTHESIS &&
-         this->get().type != Token::SEMICOLON &&
-         this->get().type != Token::COMMA) {
-    current = this->get();
+  current = this->get();
+  while (current.type != Token::RIGHTPARENTHESIS &&
+         current.type != Token::SEMICOLON && current.type != Token::COMMA) {
     ptc = tc_to_ptc(current);
     switch (current.type) {
     case Token::LEFTPARENTHESIS:
+      is_expr = true;
       temp = this->parse_expr();
       if (temp == nullptr) {
         throw std::runtime_error("parse_expr() expects an expression");
@@ -564,9 +565,11 @@ PTNode *Parser::parse_expr() {
       break;
     }
     // TODO: temp fix: look at next() behavior for parse_expr
-    if (temp == nullptr || temp->get_type() != "EXPR") {
+    if (!is_expr) {
       this->next();
-    }
+    } else
+      is_expr = false;
+    current = this->get();
   }
   while (op_stack->head != nullptr) {
     add_sym_to_output_queue(output_q, *pop_from_stack(op_stack));
