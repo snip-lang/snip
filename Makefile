@@ -2,7 +2,7 @@ SRC_DIR = src
 TEST_DIR = tests
 BUILD_DIR = build
 TEST_BUILD_DIR = tbuild 
-SOURCE = $(SRC_DIR)/lexer.cpp $(SRC_DIR)/parser.cpp $(SRC_DIR)/helper.cpp $(SRC_DIR)/error.cpp
+SOURCE = $(SRC_DIR)/lexer.cpp $(SRC_DIR)/parser.cpp $(SRC_DIR)/helper.cpp $(SRC_DIR)/error.cpp $(SRC_DIR)/semantic.cpp $(SRC_DIR)/ast.cpp
 DRIVER_SOURCE = $(SRC_DIR)/main.cpp
 TEST_SOURCE = $(TEST_DIR)/test.cpp $(TEST_DIR)/test_parser.cpp
 EXECUTABLE = snip
@@ -20,12 +20,11 @@ $(EXECUTABLE): $(OBJECTS) $(DRIVER_OBJECTS)
 	@g++ -o $(EXECUTABLE) $(OBJECTS) $(DRIVER_OBJECTS)
 
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp $(SOURCE)
-	@echo "Compiling $<..."
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp 
 	@g++ -g -c $< -o $@
 
 $(TEST_BUILD_DIR)/%.o: $(TEST_DIR)/%.cpp $(SOURCE)
-	@echo "Compiling $< ..."
+
 	@g++ -g -c $< -o $@
 
 
@@ -38,7 +37,6 @@ debug: $(SOURCE) $(DRIVER_SOURCE)
 	@g++ -g -o $(DEBUG_EXECUTABLE) $(SOURCE) $(DRIVER_SOURCE) 
 
 run: $(EXECUTABLE)
-	@etags $(SRC_DIR)/*.cpp
 	@./$(EXECUTABLE)
 
 test: $(TEST_SOURCE)
