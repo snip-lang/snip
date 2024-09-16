@@ -94,7 +94,7 @@ void test_statement_types() {
                                  "END\n";
   std::string if_stmt_rec = lex_and_parse_input(if_stmt);
   TestCase("parse if statement", if_stmt_expected, if_stmt_rec).checkResult();
-  std::string exprs = "((a + (b + (1/2))) * c / d - e); ";
+  std::string exprs = "int a = ((a + (b + (1/2))) * c / d - e); ";
   std::string exprs_expected = "START\n"
                                "  STMT\n"
                                "    VARDECL\n"
