@@ -5,6 +5,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+bool is_type(const Token tok);
+
 // struct to hold the const structs used during parsing
 struct StmtPTCs {
   ParserTokenChunk colon = {ParserToken::COLON, ""};
@@ -47,6 +49,7 @@ public:
   std::string output();
   PTNode *get_first_child();
   PTNode *get_next_sibling();
+  std::unique_ptr<ParserTokenChunk> &get_val();
 
 private:
   std::unique_ptr<ParserTokenChunk> val = nullptr;
@@ -61,6 +64,7 @@ class IntegerNode : public PTNode {};
 class DoubleNode : public PTNode {};
 class IfStmt : public PTNode {};
 class WhileStmt : public PTNode {};
+class StmtNode : public PTNode {};
 
 class Parser {
 public:

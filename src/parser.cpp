@@ -103,7 +103,9 @@ void add_op_to_stack(std::unique_ptr<OperatorStack> &stack,
     stack->head = new OperatorStackNode;
     stack->head->ptc = &op;
     OperatorStackNode *new_node = new OperatorStackNode;
-    new_node->ptc = &op;
+    new_node->ptc = new ParserTokenChunk;
+    new_node->ptc->type = op.type;
+    new_node->ptc->value = op.value;
     stack->head->next = new_node;
     stack->head = new_node;
   }
@@ -499,6 +501,8 @@ PTNode *Parser::parse_assignment() {
   return assignment;
 }
 
+std::unique_ptr<ParserTokenChunk> &PTNode::get_val() { return this->val; }
+
 PTNode *Parser::parse_expr() {
   PTNode *expr{new PTNode(this->ptcs.expr)};
   PTNode *parens = nullptr;
@@ -533,15 +537,14 @@ PTNode *Parser::parse_expr() {
     case Token::DOUBLE:
     case Token::STRING:
     case Token::IDENTIFIER:
-    case Token::ADD:
-    case Token::SUBTRACT:
-    case Token::MULTIPLY:
-    case Token::DIVIDE:
     case Token::CHAR:
       add_sym_to_output_queue(output_q, ptc);
       break;
     default:
+      // operators
       if (op_stack->head == nullptr) {
+	op_stack->head = new OperatorStackNode;
+	op_stack->head->ptc = nullptr;
         add_op_to_stack(op_stack, ptc);
         break;
       }
@@ -565,6 +568,7 @@ PTNode *Parser::parse_expr() {
       break;
     }
     // TODO: temp fix: look at next() behavior for parse_expr
+		// this is a hack to prevent the parser from skipping tokens 
     if (!is_expr) {
       this->next();
     } else
