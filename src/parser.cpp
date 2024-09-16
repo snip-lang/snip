@@ -2,9 +2,7 @@
 #include "error.h"
 #include "globals.h"
 #include "helper.h"
-#include <array>
 #include <cassert>
-#include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -117,7 +115,7 @@ pop_from_stack(std::unique_ptr<OperatorStack> &stack) {
     return nullptr;
   }
   std::unique_ptr<ParserTokenChunk> ptc =
-      std::make_unique<ParserTokenChunk>(*stack->head->ptc);
+		std::make_unique<ParserTokenChunk>(*stack->head->ptc);
   OperatorStackNode *temp = stack->head;
   stack->head = stack->head->next;
   delete temp;
@@ -144,7 +142,13 @@ void PTNode::print(const int spaces) {
   for (int i = 0; i < spaces; i++) {
     std::cout << " ";
   }
-  std::cout << token_to_string(this->val->type) << std::endl;
+	if (this->val->type == ParserToken::INT ) {
+		std::cout << token_to_string(this->val->type) << " " << std::get<int>(this->val->value) << std::endl;
+	} else if (this->val->type == ParserToken::DOUBLE) {
+		std::cout << token_to_string(this->val->type) << " " <<  std::get<double>(this->val->value) << std::endl;
+	} else {
+		std::cout << token_to_string(this->val->type) << " " << std::get<std::string>(this->val->value) << std::endl;
+	}
   if (this->first_child) {
     this->first_child->print(spaces + 2);
   }
@@ -382,7 +386,7 @@ PTNode *Parser::parse_fn_decl() {
                                 this->get().value};
   if (ident_ptc.type != ParserToken::IDENTIFIER) {
     throw std::runtime_error(
-        "Function name in function declaration is not an identifier");
+														 "Function name in function declaration is not an identifier");
   }
 
   this->next();
@@ -424,7 +428,7 @@ PTNode *Parser::parse_fn_call() {
                                 this->get().value};
   if (ident_ptc.type != ParserToken::IDENTIFIER) {
     throw std::runtime_error(
-        "Function name in function call is not an identifier");
+														 "Function name in function call is not an identifier");
   }
   this->next();
   if (this->get().type != Token::LEFTPARENTHESIS) {
@@ -543,13 +547,15 @@ PTNode *Parser::parse_expr() {
     default:
       // operators
       if (op_stack->head == nullptr) {
-	op_stack->head = new OperatorStackNode;
-	op_stack->head->ptc = nullptr;
+				
+				op_stack->head = new OperatorStackNode;
+				op_stack->head->ptc = nullptr;
         add_op_to_stack(op_stack, ptc);
         break;
       }
       while (token_type_to_precedence(op_stack->head->ptc->type) >=
              token_type_to_precedence(ptc.type)) {
+
         // pop from stack, create a node with its operands, and add to output
         // queue
         auto op = *pop_from_stack(op_stack);
@@ -557,12 +563,17 @@ PTNode *Parser::parse_expr() {
         auto left = pop_from_output_queue(output_q);
         if (left == nullptr || right == nullptr) {
           throw std::runtime_error(
-              "binop in parse_expr() expects left and right");
+																	 "binop in parse_expr() expects left and right");
         }
         PTNode *op_node = new PTNode(op);
         op_node->add_child(left.release());
         op_node->add_child(right.release());
         add_node_to_output_queue(output_q, op_node);
+        if (op_stack->head == nullptr) {
+          op_stack->head = new OperatorStackNode;
+          op_stack->head->ptc = nullptr;
+          break;
+        }
       }
       add_op_to_stack(op_stack, ptc);
       break;
