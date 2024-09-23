@@ -2,9 +2,9 @@
 #include <cassert>
 
 extern bool is_type(const Token tok);
-extern Token parser_token_to_token(ParserToken& tok);
+extern Token parser_token_to_token(const ParserToken& tok);
 
-ASTNode::ASTNode() {}
+ASTNode::ASTNode() {} 
 ASTNode::ASTNode(ParserTokenChunk& tok) {
   this->children = std::vector<ASTNode>();
   this->type = tok.type;
@@ -41,6 +41,9 @@ std::variant<int, std::string, double> ASTNode::get_value() const {
   return this->value;
 }
 
+
+ExprAST::ExprAST() {}
+
 VarDeclAST::VarDeclAST(){}
 
 void VarDeclAST::set_ident_name(std::unique_ptr<ParserTokenChunk>& name) {
@@ -50,5 +53,16 @@ void VarDeclAST::set_ident_name(std::unique_ptr<ParserTokenChunk>& name) {
 
 void VarDeclAST::set_type(std::unique_ptr<ParserTokenChunk>& name) {
   assert(is_type(parser_token_to_token(name.get()->type)));
-  this->type = std::make_unique<Token>(parser_token_to_token( name.get()->type ));
+  this->type =  name.get()->type ;
 }
+
+void VarDeclAST::set_type(PTNode* node) {
+  this->type =  node->get_val().get()->type ;
+}
+
+void VarDeclAST::set_value(std::unique_ptr<ExprAST>& value) {
+  this->value = std::make_unique<ExprAST>(); 
+  // TODO: 
+}
+
+

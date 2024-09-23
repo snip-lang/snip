@@ -32,6 +32,7 @@ private:
 
 class ExprAST : public ASTNode {
 private:
+  std::unique_ptr<ASTNode> value;
 public:
   ExprAST();
 };
@@ -74,11 +75,13 @@ class VarDeclAST : public ASTNode {
 public:
   VarDeclAST();
   void set_type(std::unique_ptr<ParserTokenChunk>& type);
+  void set_type(PTNode*); 
+  void set_name(PTNode*);
   void set_ident_name(std::unique_ptr<ParserTokenChunk>& name);
-  void set_value(std::unique_ptr<ExprAST> value);
+  void set_value(std::unique_ptr<ExprAST>& value);
 
 private:
-  std::unique_ptr<Token> type;
+  ParserToken type;
   std::string ident_name; 
   std::unique_ptr<ExprAST> value;
 };
