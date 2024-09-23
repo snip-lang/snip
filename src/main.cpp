@@ -1,6 +1,7 @@
 #include "helper.h"
 #include "lexer.h"
 #include "parser.h"
+#include "semantic.h"
 
 int main(int argc, char *argv[]) {
   std::string filename = "input.snip";
@@ -22,5 +23,7 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<PTNode> parsed_tokens = nullptr;
   parser.parse(parsed_tokens);
   print_parsed_tokens(parsed_tokens);
+
+  SemanticAnalyzer sem_analyzer(parsed_tokens);
   return 0;
 }
