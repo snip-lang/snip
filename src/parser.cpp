@@ -8,6 +8,7 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <stack>
 
 bool operator==(Token t, ParserToken pt) {
   return static_cast<int>(t) == static_cast<int>(pt);
@@ -54,7 +55,7 @@ void add_sym_to_output_queue(std::unique_ptr<OutputQueue> &queue,
 }
 
 /*
-Add nodes to tail 
+Add nodes to tail
 */
 void add_node_to_output_queue(std::unique_ptr<OutputQueue> &queue,
                               PTNode *node) {
@@ -528,7 +529,7 @@ struct RPNStack {
 
 PTNode* convert_RPN_to_tree(std::unique_ptr<OutputQueue>& postfix_queue) {
   PTNode * root = nullptr;
-  RPNStack *rpn_stack = new RPNStack;
+	std::stack<PTNode*> rpn_stack;
     // convert to rpn_ to tree format
     // 0. make a rpn_stack that holds all the nodes from postfix_queue
     // 1. keep popping nodes from postfix_queue
@@ -537,10 +538,12 @@ PTNode* convert_RPN_to_tree(std::unique_ptr<OutputQueue>& postfix_queue) {
     // 3. return a new node containing the expr back into the rpn_stack
   while (postfix_queue != nullptr && postfix_queue->head != nullptr) {
     PTNode* node = pop_from_output_queue(postfix_queue).release();
-    if (is_operator(node)) {
-      PTNode* right = rpn_stack->head;
-      rpn_stack = rpn_stack->next;
-      PTNode* left = rpn_stack->head;
+    if (is_operator(node) || node->get_val()->type == ParserToken::BINOP) {
+			// why is this line wrong?
+			PTNode* right = rpn_stack.top();
+      rpn_stack.pop();
+			PTNode* left= rpn_stack.top();
+      rpn_stack.pop();
      if (right == nullptr) {
        throw std::runtime_error(
      "binop in parse_expr() missing right node");
@@ -549,22 +552,17 @@ PTNode* convert_RPN_to_tree(std::unique_ptr<OutputQueue>& postfix_queue) {
        throw std::runtime_error(
      "binop in parse_expr() missing left node");
      }
-		  rpn_stack->head = rpn_stack->head->get_next_sibling();
       PTNode *sub_expr_node = new PTNode({ParserToken::EXPR, ""});
       sub_expr_node->add_child(left);
       sub_expr_node->add_child(right);
       sub_expr_node->add_child(node);
-			sub_expr_node->add_sibling(rpn_stack->head);
-      // TODO: fix converting rpn_stack to tree
-      rpn_stack->head = sub_expr_node;
+			rpn_stack.push(sub_expr_node);
     } else {
-			rpn_stack->next = new RPNStack;
-			rpn_stack->next->head = rpn_stack->head;
-      rpn_stack->head = node;
+			rpn_stack.push(node);
     }
     }
   // TODO: delete rpn_stack;
-  return rpn_stack->head;
+  return rpn_stack.top();
   }
 
 PTNode *Parser::parse_expr() {
