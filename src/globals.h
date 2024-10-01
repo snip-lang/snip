@@ -145,12 +145,15 @@ union TokenValue {
 
 struct TokenChunk {
   Token type = Token::UNDEFINED;
-  std::variant<int, std::string, double> value;
+  std::variant<int, std::string, double, bool, char> value;
 };
 
 struct ParserTokenChunk {
   ParserToken type = ParserToken::UNDEFINED;
-  std::variant<int, std::string, double> value;
+  std::variant<int, std::string, double, bool, char> value;
 };
+
+typedef std::variant<int, std::string, double, bool, char>
+		SymbolTableEntryValue;
 
 #endif // !GLOBAL_H
