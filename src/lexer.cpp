@@ -277,7 +277,7 @@ void Lexer::tokenize(std::unique_ptr<TokenChunk[]> &token_stack) {
           i++;
           break;
         case ':':
-          retToken = {Token::COLON, ","};
+          retToken = {Token::COLON, ":"};
           this->process_token(head);
           this->process_literal_token(retToken, head);
           i++;
@@ -312,7 +312,7 @@ void Lexer::tokenize(std::unique_ptr<TokenChunk[]> &token_stack) {
           i++;
           break;
         case ';':
-          retToken = {Token::SEMICOLON, ""};
+          retToken = {Token::SEMICOLON, ";"};
           this->process_token(head);
           this->process_literal_token(retToken, head);
           i++;
