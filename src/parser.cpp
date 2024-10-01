@@ -115,12 +115,8 @@ pop_from_stack(std::unique_ptr<OperatorStack> &stack) {
   }
   std::unique_ptr<ParserTokenChunk> ptc =
 	std::make_unique<ParserTokenChunk>(*stack->head->ptc);
-	std::cout << "Popped from stack: " << token_to_string(ptc->type) << std::endl;
   OperatorStackNode *temp = stack->head;
   stack->head = temp->next;
-	if (stack->head == nullptr) {
-		std::cout << "Stack is empty" << std::endl;
-	}
   delete temp;
   return ptc;
 }
@@ -291,7 +287,7 @@ PTNode *Parser::parse_stmts() {
   if (this->get().type != Token::LEFTBRACE) {
     throw std::runtime_error("parse_stmts() expects a left brace, statements "
                              "without braces are not supported yet");
-    return nullptr; // TODO: stmts without braces
+    return nullptr; 
   }
   PTNode *braces = new PTNode(this->ptcs.left_brace);
   this->next();
@@ -552,7 +548,7 @@ PTNode* convert_RPN_to_tree(std::unique_ptr<OutputQueue>& postfix_queue) {
        throw std::runtime_error(
      "binop in parse_expr() missing left node");
      }
-      PTNode *sub_expr_node = new PTNode({ParserToken::EXPR, ""});
+      PTNode *sub_expr_node = new PTNode({ParserToken::BINOP, ""});
       sub_expr_node->add_child(left);
       sub_expr_node->add_child(right);
       sub_expr_node->add_child(node);
@@ -561,11 +557,10 @@ PTNode* convert_RPN_to_tree(std::unique_ptr<OutputQueue>& postfix_queue) {
 			rpn_stack.push(node);
     }
     }
-  // TODO: delete rpn_stack;
   return rpn_stack.top();
-  }
+}
 
-PTNode *Parser::parse_expr() {
+PTNode *Parser::parse_expr(bool is_outer_expr ) {
   PTNode *expr{new PTNode(this->ptcs.expr)};
   PTNode *parens = nullptr;
   PTNode *expression = nullptr;
@@ -581,13 +576,13 @@ PTNode *Parser::parse_expr() {
   }
   expression = (parens == nullptr) ? expr : parens;
   current = this->get();
-  while (current.type != Token::RIGHTPARENTHESIS &&
+  while ((is_outer_expr || current.type != Token::RIGHTPARENTHESIS) &&
          current.type != Token::SEMICOLON && current.type != Token::COMMA) {
     ptc = tc_to_ptc(current);
     switch (current.type) {
     case Token::LEFTPARENTHESIS:
       is_expr = true;
-      temp = this->parse_expr();
+      temp = this->parse_expr(is_outer_expr=false);
       if (temp == nullptr) {
         throw std::runtime_error("parse_expr() expects an expression");
       }
@@ -615,7 +610,7 @@ PTNode *Parser::parse_expr() {
       add_op_to_stack(op_stack, ptc);
       break;
     }
-    // TODO: temp fix: look at next() behavior for parse_expr
+    // NOTE: temp fix: look at next() behavior for parse_expr
 		// this is a hack to prevent the parser from skipping tokens
     if (!is_expr) {
       this->next();

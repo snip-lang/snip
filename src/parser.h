@@ -83,8 +83,8 @@ public:
 
 private:
   std::unique_ptr<TokenChunk[]> token_stream;
-  PTNode *parse_expr();
-  void parse_body(PTNode *start);
+  PTNode *parse_expr(bool is_outer_expr = true);
+  void parse_body(PTNode *);
   PTNode *parse_if_stmt();
   PTNode *parse_while_stmt();
   PTNode *parse_var_decl();
