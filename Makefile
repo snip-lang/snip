@@ -23,12 +23,8 @@ $(EXECUTABLE): $(OBJECTS) $(DRIVER_OBJECTS)
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp 
 	@g++ -g -c $< -o $@
 
-$(TEST_BUILD_DIR)/%.o: $(TEST_DIR)/%.cpp $(SOURCE)
-
-	@g++ -g -c $< -o $@
-
-
 clean:
+
 	@echo "Cleaning up..."
 	@rm -f $(EXECUTABLE) $(TEST_EXECUTABLE) $(DEBUG_EXECUTABLE) $(BUILD_DIR)/*.o
 
