@@ -325,3 +325,19 @@ bool get_flags(const int &argc, char *argv[], std::string &filename,
   }
   return isTest;
 }
+
+
+void get_variant_value_and_assign_to(ParserTokenChunk& tok,
+																		 SymbolTableEntryValue& var_to_assign) {
+  if (tok.type == ParserToken::STRING) {
+    var_to_assign = std::get<std::string>(tok.value);
+  } else if (tok.type == ParserToken::INT) {
+    var_to_assign = std::get<int>(tok.value);
+  } else if (tok.type == ParserToken::CHAR) {
+    var_to_assign = std::get<char>(tok.value);
+  } else if (tok.type == ParserToken::BOOL) {
+    var_to_assign = std::get<bool>(tok.value);
+  } else {
+    throw std::runtime_error("unexpected type in get_variant_value");
+  }
+}
