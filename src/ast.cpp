@@ -1,14 +1,17 @@
 #include "ast.h"
 #include <cassert>
+#include "globals.h"
 
 extern bool is_type(const Token tok);
 extern Token parser_token_to_token(const ParserToken& tok);
+extern void get_variant_value_and_assign_to(ParserTokenChunk& tok,
+																						SymbolTableEntryValue& var_to_assign);
 
 ASTNode::ASTNode() {} 
 ASTNode::ASTNode(ParserTokenChunk& tok) {
   this->children = std::vector<ASTNode>();
   this->type = tok.type;
-  this->value = tok.value;
+	get_variant_value_and_assign_to(tok, this->value);
 }
 
 void ASTNode::set_tok(ParserTokenChunk& tok) {
@@ -34,10 +37,10 @@ void ASTNode::set_type(ParserToken& type) {
 ParserToken ASTNode::get_type() const {
   return this->type;
 }
-void ASTNode::set_value(std::variant<int, std::string, double>value) {
+void ASTNode::set_value(SymbolTableEntryValue value) {
   this->value = value;
 }
-std::variant<int, std::string, double> ASTNode::get_value() const {
+SymbolTableEntryValue ASTNode::get_value() const {
   return this->value;
 }
 

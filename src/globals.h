@@ -3,6 +3,7 @@
 
 #include <string>
 #include <variant>
+#include <stdexcept>
 
 enum class Token {
   COLON = -1,
