@@ -428,364 +428,371 @@ TokenChunk Lexer::get_token() {
   // statement so the token is atleast two chars long
   while (i <= token_len) {
     switch (currentState) {
-    // ([a-z][A-z][0-9]|_)*
+      // ([a-z][A-z][0-9]|_)*
     case State::IDENTIFIER:
       retToken = Token::IDENTIFIER;
       while (i < token_len) {
-        if (!(isalnum(this->current_token[i]) ||
-              this->current_token[i] == '_')) {
-          retToken = Token::INVALID;
-        }
-        i++;
+	if (!(isalnum(this->current_token[i]) ||
+	      this->current_token[i] == '_')) {
+	  retToken = Token::INVALID;
+	}
+	i++;
       }
       currentState = State::END;
       break;
     case State::ANDK_1:
       if (this->current_token[i] == '&') {
-        currentState = State::OR_2;
-        i++;
+	currentState = State::OR_2;
+	i++;
       } else
-        retToken = Token::INVALID;
+	retToken = Token::INVALID;
       break;
     case State::OR_1:
       if (this->current_token[i] == '|') {
-        currentState = State::OR_2;
-        i++;
+	currentState = State::OR_2;
+	i++;
       } else
-        retToken = Token::INVALID;
+	retToken = Token::INVALID;
       break;
     case State::OR_2:
       if (i == token_len) {
-        currentState = State::END;
-        retToken = Token::OR;
-        i--;
+	currentState = State::END;
+	retToken = Token::OR;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
-        // i++ handled in identifier case
+	currentState = State::IDENTIFIER;
+	// i++ handled in identifier case
       }
       break;
     case State::IF_1:
       if (this->current_token[i] == 'f') {
-        currentState = State::IF_2;
-        i++;
+	currentState = State::IF_2;
+	i++;
       } else if (this->current_token[i] == 'n') {
-        currentState = State::INTK_2;
-        i++;
+	currentState = State::INTK_2;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::IF_2:
       if (i == token_len) {
-        currentState = State::END;
-        retToken = Token::IF;
-        i--;
+	currentState = State::END;
+	retToken = Token::IF;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
-        // i++ handled in identifier case
+	currentState = State::IDENTIFIER;
+	// i++ handled in identifier case
       }
       break;
     case State::ELSE_1:
       if (this->current_token[i] == 'l') {
-        currentState = State::ELSE_2;
-        i++;
+	currentState = State::ELSE_2;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::ELSE_2:
       if (this->current_token[i] == 's') {
-        currentState = State::ELSE_3;
-        i++;
+	currentState = State::ELSE_3;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::ELSE_3:
       if (this->current_token[i] == 'e') {
-        currentState = State::ELSE_4;
-        i++;
+	currentState = State::ELSE_4;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::ELSE_4:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::ELSE;
-        i--;
+	currentState = State::END;
+	retToken = Token::ELSE;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::INTK_2:
       if (this->current_token[i] == 't') {
-        currentState = State::INTK_3;
-        i++;
+	currentState = State::INTK_3;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::INTK_3:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::INTK;
-        i--;
+	currentState = State::END;
+	retToken = Token::INTK;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::TRUEK_1:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::TRUEK;
+	currentState = State::END;
+	retToken = Token::TRUEK;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::DOUBLEK_1:
       if (this->current_token[i] == 'o') {
-        currentState = State::DOUBLEK_2;
-        i++;
+	currentState = State::DOUBLEK_2;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::DOUBLEK_3:
       if (this->current_token[i] == 'b') {
-        currentState = State::DOUBLEK_4;
-        i++;
+	currentState = State::DOUBLEK_4;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::DOUBLEK_4:
       if (this->current_token[i] == 'l') {
-        currentState = State::DOUBLEK_5;
-        i++;
+	currentState = State::DOUBLEK_5;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::DOUBLEK_5:
       if (this->current_token[i] == 'e') {
-        currentState = State::DOUBLEK_6;
-        i++;
+	currentState = State::DOUBLEK_6;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::DOUBLEK_6:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::DOUBLEK;
-        i--;
+	currentState = State::END;
+	retToken = Token::DOUBLEK;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::BOOLK_1:
       if (this->current_token[i] == 'o') {
-        currentState = State::BOOLK_2;
-        i++;
+	currentState = State::BOOLK_2;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::BOOLK_2:
       if (this->current_token[i] == 'o') {
-        currentState = State::BOOLK_3;
-        i++;
+	currentState = State::BOOLK_3;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::BOOLK_3:
       if (this->current_token[i] == 'l') {
-        currentState = State::BOOLK_4;
-        i++;
+	currentState = State::BOOLK_4;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::BOOLK_4:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::BOOLK;
-        i--;
+	currentState = State::END;
+	retToken = Token::BOOLK;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::WHILE_1:
       if (this->current_token[i] == 'h') {
-        currentState = State::WHILE_2;
-        i++;
+	currentState = State::WHILE_2;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::WHILE_2:
       if (this->current_token[i] == 'i') {
-        currentState = State::WHILE_3;
-        i++;
+	currentState = State::WHILE_3;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::WHILE_3:
       if (this->current_token[i] == 'l') {
-        currentState = State::WHILE_4;
-        i++;
+	currentState = State::WHILE_4;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::WHILE_4:
       if (this->current_token[i] == 'e') {
-        currentState = State::WHILE_5;
-        i++;
+	currentState = State::WHILE_5;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::WHILE_5:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::WHILE;
-        i--;
+	currentState = State::END;
+	retToken = Token::WHILE;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
     case State::FUNCTION_1:
       if (this->current_token[i] == 'n') {
-        currentState = State::FUNCTION_2;
-        i++;
+	currentState = State::FUNCTION_2;
+	i++;
       } else if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::FALSEK;
+	currentState = State::END;
+	retToken = Token::FALSEK;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::FUNCTION_2:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::FN;
-        i--;
+	currentState = State::END;
+	retToken = Token::FN;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::STRINGK_1:
       if (this->current_token[i] == 't') {
-        currentState = State::STRINGK_2;
-        i++;
+	currentState = State::STRINGK_2;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::STRINGK_2:
       if (this->current_token[i] == 'r') {
-        currentState = State::STRINGK_3;
-        i++;
+	currentState = State::STRINGK_3;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::STRINGK_3:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::STRINGK;
-        i--;
+	currentState = State::END;
+	retToken = Token::STRINGK;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::CHARK_1:
       if (this->current_token[i] == 'h') {
-        currentState = State::CHARK_2;
-        i++;
+	currentState = State::CHARK_2;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::CHARK_2:
       if (this->current_token[i] == 'a') {
-        currentState = State::CHARK_3;
-        i++;
+	currentState = State::CHARK_3;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::CHARK_3:
       if (this->current_token[i] == 'r') {
-        currentState = State::CHARK_4;
-        i++;
+	currentState = State::CHARK_4;
+	i++;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::CHARK_4:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::CHARK;
-        i--;
+	currentState = State::END;
+	retToken = Token::CHARK;
+	i--;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::AND_1:
       if (this->current_token[i] == '&') {
-        currentState = State::AND_2;
+	currentState = State::AND_2;
       } else {
-        currentState = State::IDENTIFIER;
+	currentState = State::IDENTIFIER;
       }
       break;
     case State::AND_2:
       if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::AND;
-        i--;
+	currentState = State::END;
+	retToken = Token::AND;
+	i--;
       } else {
-        currentState = State::INVALID;
+	currentState = State::INVALID;
       }
       break;
     case State::EQUAL_1:
       if (this->current_token[i] == '=') {
-        currentState = State::EQUAL_2;
+	currentState = State::EQUAL_2;
       } else if (this->current_token[i] == '\0') {
-        i--;
-        retToken = Token::ASSIGN;
-        currentState = State::END;
+	i--;
+	retToken = Token::ASSIGN;
+	currentState = State::END;
       } else {
-        i--;
-        retToken = Token::UNDEFINED;
-        currentState = State::END;
+	i--;
+	retToken = Token::UNDEFINED;
+	currentState = State::END;
+	break;
+	case State::EQUAL_2:
+	  if (this->current_token[i] == '\0') {
+	    i--;
+	    currentState = State::END;
+	    retToken = Token::EQUAL;
+	  }
+	  break;
+	  case State::NOT_1:
+	    if (this->current_token[i] == '\0') {
+	      currentState = State::END;
+	      retToken = Token::NOT;
+	    } else if (this->current_token[i] == '=') {
+	      currentState = State::NOTEQUAL_2;
+	      i++;
+	    } else {
+	      currentState = State::END;
+	      retToken = Token::UNDEFINED;
+	      i--;
+	    }
+	    break;
+	    case State::END:
+	      if (retToken == Token::UNDEFINED) {
+		std::cerr << "Undefined behavior" << std::endl;
+		std::exit(-10);
+	      }
+	      return {retToken, this->current_token};
+	      break;
+	      default:
+		break;
       }
-      break;
-    case State::NOT_1:
-      if (this->current_token[i] == '\0') {
-        currentState = State::END;
-        retToken = Token::NOT;
-      } else if (this->current_token[i] == '=') {
-        currentState = State::NOTEQUAL_2;
-        i++;
-      } else {
-        currentState = State::END;
-        retToken = Token::UNDEFINED;
-        i--;
-      }
-      break;
-    case State::END:
-      if (retToken == Token::UNDEFINED) {
-        std::cerr << "Undefined behavior" << std::endl;
-        std::exit(-10);
-      }
-      return {retToken, this->current_token};
-      break;
-    default:
-      break;
     }
   }
   std::cout << "Did not finish lexing " << std::endl;
