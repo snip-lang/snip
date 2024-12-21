@@ -163,7 +163,9 @@ void Lexer::process_token(token_node *&head) {
     this->current_token_ptr = 0;
     insert_into_linked_list(head, retToken, this->num_tokens);
   }
+
 }
+
 void Lexer::process_literal_token(TokenChunk &retToken, token_node *&head) {
   if (this->current_token_ptr != 0) {
     this->current_token[this->current_token_ptr] = '\0';
@@ -191,7 +193,6 @@ void Lexer::tokenize(std::unique_ptr<TokenChunk[]> &token_stack) {
       this->current_token_ptr = 0;
       i++;
     }
-
     // if the end of the file is not reached, then the cases are:
     // 1. you might have hit a blank space, in which case,
     //  1. get_token() if there is a token in this->char_stack
@@ -207,7 +208,6 @@ void Lexer::tokenize(std::unique_ptr<TokenChunk[]> &token_stack) {
     //  literal into the list
     // 4. If you don't encounter a whitespace or a literal, then keep going by
     // calling read_next()
-
     else {
       this->current_char = this->input[this->ptr];
       this->current_token[this->current_token_ptr] = '\0';
@@ -764,11 +764,9 @@ TokenChunk Lexer::get_token() {
 	currentState = State::END;
 	break;
 	case State::EQUAL_2:
-	  if (this->current_token[i] == '\0') {
-	    i--;
-	    currentState = State::END;
-	    retToken = Token::EQUAL;
-	  }
+		i--;
+		currentState = State::END;
+		retToken = Token::EQUAL;
 	  break;
 	  case State::NOT_1:
 	    if (this->current_token[i] == '\0') {

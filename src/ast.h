@@ -18,15 +18,15 @@ public:
   void add_child(ASTNode);
   void set_type(ParserToken &);
   ParserToken get_type() const;
-  void set_value(std::variant<int, std::string, double>);
-  std::variant<int, std::string, double> get_value() const;
+  void set_value(SymbolTableEntryValue);
+  SymbolTableEntryValue get_value() const;
 
 private:
   std::vector<ASTNode> children;
   ASTNode* next_sibling;
   ASTNode* parent;
   ParserToken type;
-  std::variant<int, std::string, double> value;
+  SymbolTableEntryValue value;
 };
 
 

@@ -341,3 +341,8 @@ void get_variant_value_and_assign_to(ParserTokenChunk& tok,
     throw std::runtime_error("unexpected type in get_variant_value");
   }
 }
+
+void get_variant_value_and_assign_to(SymbolTableEntryValue& tok,
+																		 SymbolTableEntryValue& var_to_assign) {
+		var_to_assign = tok;
+}
