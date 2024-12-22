@@ -10,17 +10,18 @@
 #include <utility>
 #include <variant>
 
-typedef std::variant<char, int, std::string> ident_value;
-
 extern bool is_type(const Token tok);
 extern Token parser_token_to_token(const ParserToken &pt);
+extern void get_variant_value_and_assign_to(ParserTokenChunk &,
+                                            SymbolTableEntryValue &);
+extern void get_variant_value_and_assign_to(SymbolTableEntryValue &,
+                                            SymbolTableEntryValue &);
 
 SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<PTNode> &root) {
   if (root == nullptr) {
     throw std::runtime_error("tokens not receieved in semantic analyzer");
   }
   PTNode *root_node = root.get();
-
   if (root_node->get_type() != "START") {
     throw std::runtime_error("root node of parsed tokens is not of type START");
   }
@@ -44,7 +45,6 @@ SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<PTNode> &root) {
         // for each expr_node
         while (expr_parsed_node != nullptr) {
           ParserTokenChunk *expr = expr_parsed_node->get_val().get();
-
           std::cout << "expr: "
                     << token_to_string(expr_parsed_node->get_val().get()->type)
                     << std::endl;
@@ -60,33 +60,14 @@ SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<PTNode> &root) {
   }
 }
 
-// START
-//   STMT
-//     VARDECL
-//       INTK
-//       IDENTIFIER
-//       ASSIGN
-//       EXPR
-//         EXPR
-//           EXPR
-//             IDENTIFIER
-//             IDENTIFIER
-//             SUBTRACT -
-//           LEFTPARENTHESIS
-//           RIGHTPARENTHESIS
-//         EXPR
-//           IDENTIFIER
-//           EXPR
-//             IDENTIFIER
-//             EXPR
-//             MULTIPLY *
-//           ADD +
-//       SEMICOLON
-// END
+/**
+ * Walk through the parsed_tokens, then build the AST
+ */
+void SemanticAnalyzer::analyze() {}
 
 ExprNode *parse_expr(PTNode *expr_node) {
   ExprNode *ast_expr_node = nullptr;
-
+  // TODO:
   return ast_expr_node;
 }
 
@@ -137,29 +118,57 @@ int SymbolTableS::insert(PTNode *node, PTNode *type) {
   return 0;
 }
 
-/* aux method to insert a identifier into the sym_table
+/** aux method to insert a identifier into the sym_table
  *
  * @param node ParserTokenChunk*
  */
 int SymbolTable::insert_tok(ParserTokenChunk *tok, PTNode *ident_type) {
   std::string ident_name = std::get<std::string>(tok->value);
-  if (ident_type->get_val()->type == ParserToken::CHAR) {
-    SymbolTableEntry entry = {ParserToken::CHAR, '\0'};
-    this->table.insert(std::make_pair(ident_name, entry));
-  } else if (ident_type->get_val()->type == ParserToken::INT) {
-    SymbolTableEntry entry = {ParserToken::INT, 0};
-    this->table.insert(std::make_pair(ident_name, entry));
-  } else if (ident_type->get_val()->type == ParserToken::STRING) {
-    SymbolTableEntry entry = {ParserToken::STRING, ""};
-    this->table.insert(std::make_pair(ident_name, entry));
-  } else if (ident_type->get_val()->type == ParserToken::BOOL) {
-    SymbolTableEntry entry = {ParserToken::STRING, 0};
-    this->table.insert(std::make_pair(ident_name, entry));
+  SymbolTableEntry entry = {ParserToken(), '\0'};
+  switch (ident_type->get_val()->type) {
+  case ParserToken::CHAR:
+  case ParserToken::INT:
+    entry = {ident_type->get_val()->type, '\0'};
+    break;
+  case ParserToken::STRING:
+    entry = {ident_type->get_val()->type, ""};
+    break;
+  case ParserToken::BOOL:
+    entry = {ident_type->get_val()->type, 0};
+    break;
   }
+  this->table.insert(std::make_pair(ident_name, entry));
   return 0;
 }
 
-/* insert a identifier into the sym_table
+/** get a identifier from the sym_table
+ *
+ * @param ident_name std::string
+ * @return ParserTokenChunk*
+ */
+ParserTokenChunk *SymbolTable::get_tok(const std::string &ident_name) {
+  auto entry_it = table.find(ident_name);
+  if (entry_it == this->table.end()) {
+    return nullptr;
+  }
+  ParserTokenChunk *chunk = new ParserTokenChunk;
+  chunk->type = entry_it->second.type;
+  get_variant_value_and_assign_to(entry_it->second.ident_value, chunk->value);
+  return chunk;
+}
+
+ParserTokenChunk *SymbolTableS::get_tok(std::string ident_name) {
+  ParserTokenChunk *ident = nullptr;
+  for (SymbolTable *table : this->tables) {
+    ParserTokenChunk *ident = table->get_tok(ident_name);
+    if (ident != nullptr) {
+      break;
+    }
+  }
+  return ident;
+}
+
+/** insert a identifier into the sym_table
  *
  * @param node PTNode*
  */
