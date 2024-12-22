@@ -526,14 +526,10 @@ PTNode *convert_RPN_to_tree(std::unique_ptr<OutputQueue> &postfix_queue) {
   // nodes from rpn_stack
   // 3. return a new node containing the expr back into the rpn_stack
 
-  PTNode *node = pop_from_output_queue(postfix_queue).release();
-  if (postfix_queue->head == nullptr) {
-    // only one tok, eg. (1), (a), (true) , so exit now
-    return node;
-  }
-  std::cout << "elisp\n";
+  PTNode *node = nullptr;
 
-  while (postfix_queue != nullptr && postfix_queue->head != nullptr) {
+  do {
+    node = pop_from_output_queue(postfix_queue).release();
     if (is_operator(node) || node->get_val()->type == ParserToken::BINOP) {
       PTNode *right = rpn_stack.top();
       rpn_stack.pop();
@@ -550,8 +546,9 @@ PTNode *convert_RPN_to_tree(std::unique_ptr<OutputQueue> &postfix_queue) {
     } else {
       rpn_stack.push(node);
     }
-    node = pop_from_output_queue(postfix_queue).release();
-  }
+  } while (postfix_queue != nullptr && postfix_queue->head != nullptr);
+  
+  
   return rpn_stack.top();
 }
 
