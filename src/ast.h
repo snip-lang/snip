@@ -1,115 +1,22 @@
 #ifndef AST_H
 #define AST_H
 
-#include "globals.h"
-#include "parser.h"
-#include <unordered_map>
-#include <vector>
-#include <memory>
+#include "semantic.h"
 
-class ASTNode {
+class ASTRoot {
 public:
-  ASTNode();
-  ASTNode(ParserTokenChunk &);
-  void set_tok(ParserTokenChunk &);
-  ParserTokenChunk get_tok() const;
-  void set_children(std::vector<ASTNode>);
-  std::vector<ASTNode> get_children() const;
-  void add_child(ASTNode);
-  void set_type(ParserToken &);
-  ParserToken get_type() const;
-  void set_value(SymbolTableEntryValue);
-  SymbolTableEntryValue get_value() const;
-
+  ASTRoot();
+  ~ASTRoot();
+  void add_child(PTNode *);
+  void print(const int);
+  std::string output();
+  PTNode *get_first_child();
+  PTNode *get_next_sibling();
 private:
-  std::vector<ASTNode> children;
-  ASTNode* next_sibling;
-  ASTNode* parent;
-  ParserToken type;
-  SymbolTableEntryValue value;
+  PTNode *first_child = nullptr;
+  PTNode *last_child = nullptr;
+  PTNode *next_sibling = nullptr;
+  PTNode *prev_sibling = nullptr;
 };
-
-
-class ExprAST : public ASTNode {
-private:
-  std::unique_ptr<ASTNode> value;
-public:
-  ExprAST();
-};
-
-class LiteralAST : public ExprAST {};
-
-class StringAST : public LiteralAST {
-public:
-  StringAST(std::string value);
-
-private:
-  std::string value;
-};
-
-class DoubleAST : public LiteralAST {
-private:
-  std::string value;
-
-public:
-  DoubleAST(std::string value);
-};
-
-class CharAST : public LiteralAST {
-public:
-  CharAST(std::string value);
-
-private:
-  std::string value;
-};
-
-class IntAST : public LiteralAST {
-private:
-  std::string value;
-
-public:
-  IntAST(std::string value);
-};
-
-class VarDeclAST : public ASTNode {
-public:
-  VarDeclAST();
-  void set_type(std::unique_ptr<ParserTokenChunk>& type);
-  void set_type(PTNode*); 
-  void set_name(PTNode*);
-  void set_ident_name(std::unique_ptr<ParserTokenChunk>& name);
-  void set_value(std::unique_ptr<ExprAST>& value);
-
-private:
-  ParserToken type;
-  std::string ident_name; 
-  std::unique_ptr<ExprAST> value;
-};
-
-class BinaryExprAST : public ExprAST {
-private:
-  std::unique_ptr<ExprAST> LHS;
-  std::unique_ptr<Token> op;
-  std::unique_ptr<ExprAST> RHS;
-
-public:
-  BinaryExprAST();
-};
-
-class UnaryExprAST : public ExprAST {
-public:
-  UnaryExprAST();
-};
-
-class CallExprAST : public ExprAST {
-public:
-  CallExprAST();
-};
-
-class NumberExprAST : public ExprAST {
-public:
-  NumberExprAST();
-};
-
 
 #endif
