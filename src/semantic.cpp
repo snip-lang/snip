@@ -19,42 +19,22 @@ extern void get_variant_value_and_assign_to(SymbolTableEntryValue &,
 
 SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<PTNode> &root) {
   if (root == nullptr) {
-    throw std::runtime_error("tokens not receieved in semantic analyzer");
+    throw std::runtime_error("no tokens to analyze");
   }
+
   PTNode *root_node = root.get();
   if (root_node->get_type() != "START") {
     throw std::runtime_error("root node of parsed tokens is not of type START");
   }
   PTNode *child = root_node->get_first_child();
-  while (child != nullptr) {
-    if (child->get_type() == "STMT") {
-      PTNode *stmt_type = child->get_first_child();
-      if (stmt_type->get_type() == "VARDECL") {
-        VarDeclAST *var_decl = new VarDeclAST();
-        PTNode *type_ast_node = stmt_type->get_first_child();
-        // DEBUG:
-        std::cout << "type: "
-                  << token_to_string(type_ast_node->get_val().get()->type)
-                  << std::endl;
-        PTNode *ident_ast_node = type_ast_node->get_next_sibling();
-        std::cout << "ident: "
-                  << token_to_string(ident_ast_node->get_val().get()->type)
-                  << std::endl;
-        PTNode *expr_parsed_node =
-            ident_ast_node->get_next_sibling()->get_next_sibling();
-        // for each expr_node
-        while (expr_parsed_node != nullptr) {
-          ParserTokenChunk *expr = expr_parsed_node->get_val().get();
-          std::cout << "expr: "
-                    << token_to_string(expr_parsed_node->get_val().get()->type)
-                    << std::endl;
-          expr_parsed_node = expr_parsed_node->get_next_sibling();
-        }
-        std::cout << "\n";
-      }
+  while (child and child->get_type() == "STMT") {
+    auto child_node = child->get_first_child();
+    if (child_node->get_type() == "IFSTMT") {
+    } else if (child_node->get_type() == "WHILESTMT") {
+    } else if (child_node->get_type() == "VARDECL") {
+    } else if (child_node->get_type() == "FNDECL") {
     } else {
-      throw std::runtime_error(
-          "(semantic): unexpected node type in top level of parsed tokens");
+      throw std::runtime_error("unexpected token type");
     }
     child = child->get_next_sibling();
   }
@@ -67,7 +47,7 @@ void SemanticAnalyzer::analyze() {}
 
 ExprNode *parse_expr(PTNode *expr_node) {
   ExprNode *ast_expr_node = nullptr;
-  // TODO:
+
   return ast_expr_node;
 }
 

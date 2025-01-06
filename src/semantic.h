@@ -1,7 +1,6 @@
 #ifndef SEMANTIC_ANALYZER_H
 #define SEMANTIC_ANALYZER_H
 
-#include "ast.h"
 #include "globals.h"
 #include "parser.h"
 #include <memory>
@@ -13,9 +12,6 @@ class SemanticAnalyzer {
 public:
   SemanticAnalyzer(std::unique_ptr<PTNode> &root);
   void analyze();
-
-private:
-  ASTNode *root;
 };
 
 struct SymbolTableEntry {
