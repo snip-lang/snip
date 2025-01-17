@@ -194,7 +194,7 @@ std::string PTNode::output() {
   return ss.str();
 }
 
-void PTNode::add_child(ParserTokenChunk &tok) {
+PTNode* PTNode::add_child(ParserTokenChunk &tok) {
   if (this->last_child != nullptr) {
     this->last_child->add_sibling(tok);
     this->last_child = this->last_child->next_sibling;
@@ -204,9 +204,10 @@ void PTNode::add_child(ParserTokenChunk &tok) {
     this->first_child->val->type = tok.type;
     this->last_child = this->first_child;
   }
+  return this;
 }
 
-void PTNode::add_sibling(ParserTokenChunk &tok) {
+PTNode* PTNode::add_sibling(ParserTokenChunk &tok) {
   if (this->next_sibling != nullptr) {
     this->next_sibling->add_sibling(tok);
   } else {
@@ -214,7 +215,9 @@ void PTNode::add_sibling(ParserTokenChunk &tok) {
     ;
     this->next_sibling->prev_sibling = this;
   }
+  return this;
 }
+
 void PTNode::add_sibling(PTNode *sibling) {
   if (this->next_sibling != nullptr) {
     this->next_sibling->add_sibling(sibling);
@@ -226,7 +229,7 @@ void PTNode::add_sibling(PTNode *sibling) {
   }
 }
 
-void PTNode::add_child(PTNode *child) {
+PTNode* PTNode::add_child(PTNode *child) {
   if (this->last_child != nullptr) {
     this->last_child->add_sibling(child);
     this->last_child = this->last_child->next_sibling;
@@ -235,6 +238,7 @@ void PTNode::add_child(PTNode *child) {
     this->first_child = child;
     this->last_child = this->first_child;
   }
+  return this ;
 }
 
 PTNode::~PTNode() { // NOTE: pointless
@@ -482,19 +486,14 @@ PTNode *Parser::parse_stmt() {
 PTNode *Parser::parse_assignment() {
   PTNode *assignment = new PTNode(this->ptcs.assignstmt);
   ParserTokenChunk ident = {ParserToken::IDENTIFIER, this->get().value};
+  PTNode *assign = new PTNode(this->ptcs.assign);
   assignment->add_child(new PTNode(ident));
   this->next();
-  PTNode *assign = new PTNode(this->ptcs.assign);
   assignment->add_child(assign);
   this->next();
   PTNode *expr = this->parse_expr();
-  if (expr == nullptr) {
-    std::runtime_error("parse_assignment() expects an expression");
-  }
-  if (this->get().type != Token::SEMICOLON) {
-    Error("Assignment statement expects a semicolon", 0, Severity::ERROR,
-          __FILE__, __LINE__);
-  }
+  assert(expr != nullptr);
+  assert(this->get().type == Token::SEMICOLON);
   assignment->add_child(expr);
   assignment->add_child(this->ptcs.semicolon);
   this->next();
@@ -532,11 +531,11 @@ PTNode *convert_RPN_to_tree(std::unique_ptr<OutputQueue> &postfix_queue) {
     node = pop_from_output_queue(postfix_queue).release();
     if (is_operator(node) || node->get_val()->type == ParserToken::BINOP) {
       PTNode *right = rpn_stack.top();
-      rpn_stack.pop();
       assert(right != nullptr);
-      PTNode *left = rpn_stack.top();
       rpn_stack.pop();
+      PTNode *left = rpn_stack.top();
       assert(left != nullptr);
+      rpn_stack.pop();
 
       PTNode *sub_expr_node = new PTNode({ParserToken::BINOP, ""});
       sub_expr_node->add_child(left);

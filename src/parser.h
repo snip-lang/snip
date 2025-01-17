@@ -1,5 +1,4 @@
 #include "globals.h"
-#include <cstddef>
 #include <memory>
 
 #ifndef PARSER_H
@@ -40,9 +39,9 @@ class PTNode {
 public:
   PTNode(ParserTokenChunk);
   ~PTNode();
-  void add_child(ParserTokenChunk &);
-  void add_child(PTNode *);
-  void add_sibling(ParserTokenChunk &);
+  PTNode* add_child(ParserTokenChunk &);
+  PTNode* add_child(PTNode *);
+  PTNode* add_sibling(ParserTokenChunk &);
   const std::string get_type();
   void add_sibling(PTNode *);
   void print(const int);
