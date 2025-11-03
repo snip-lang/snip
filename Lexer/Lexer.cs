@@ -1,9 +1,15 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Snip.Lexer;
+
+public class LexingError(string message, int line, int column) : Exception(message)
+{
+    public int Line { get; } = line;
+    public int Column { get; } = column;
+
+    public override string Message => $"{base.Message} (line {Line}, column {Column})";
+}
 
 public enum TokenType
 {
@@ -55,6 +61,8 @@ public enum TokenType
     Semicolon, // ;
     Comma, // ,
     Dot, // .
+    OptionalChain, // ?.
+    Spread, // ...
     Colon, // :
     QuestionMark, // ?
     Arrow, // =>
@@ -123,6 +131,7 @@ public enum TokenType
     Newline,
     Whitespace,
     Comment,
+    TemplateLiteral, // `...`
     EndOfFile,
     Invalid
 }
@@ -131,8 +140,8 @@ public class Token
 {
     public TokenType Type { get; set; }
     public string Value { get; set; }
-    private int Line { get; set; }
-    private int Column { get; set; }
+    public int Line { get; set; }
+    public int Column { get; set; }
     private int Position { get; set; }
 
     public Token(TokenType type, string value, int line, int column, int position)
@@ -282,18 +291,36 @@ public class Lexer
             case ',':
                 AddToken(TokenType.Comma, ",");
                 break;
-            case '.':
-                AddToken(TokenType.Dot, ".");
-                break;
-            case ';':
-                AddToken(TokenType.Semicolon, ";");
-                break;
-            case ':':
-                AddToken(TokenType.Colon, ":");
-                break;
-            case '?':
-                AddToken(TokenType.QuestionMark, "?");
-                break;
+             case '.':
+                 if (IsDigit(Peek()))
+                 {
+                     ScanNumber();
+                 }
+                 else if (Match('.') && Match('.'))
+                 {
+                     AddToken(TokenType.Spread, "...");
+                 }
+                 else
+                 {
+                     AddToken(TokenType.Dot, ".");
+                 }
+                  break;
+             case ';':
+                 AddToken(TokenType.Semicolon, ";");
+                 break;
+             case ':':
+                 AddToken(TokenType.Colon, ":");
+                 break;
+             case '?':
+                 if (Match('.'))
+                 {
+                     AddToken(TokenType.OptionalChain, "?.");
+                 }
+                 else
+                 {
+                     AddToken(TokenType.QuestionMark, "?");
+                 }
+                 break;
             case '~':
                 AddToken(TokenType.BitwiseNot, "~");
                 break;
@@ -427,11 +454,11 @@ public class Lexer
             case '\'':
                 ScanString('\'');
                 break;
-            case '`':
-                ScanTemplateString();
-                break;
+             case '`':
+                 ScanTemplateString();
+                 break;
 
-            default:
+             default:
                 if (IsDigit(c))
                 {
                     ScanNumber();
@@ -442,7 +469,7 @@ public class Lexer
                 }
                 else
                 {
-                    AddToken(TokenType.Invalid, c.ToString());
+                    throw new LexingError($"Unexpected character '{c}'", _line, _column);
                 }
 
                 break;
@@ -487,8 +514,7 @@ public class Lexer
 
         if (IsAtEnd())
         {
-            AddToken(TokenType.Invalid, "Unterminated string");
-            return;
+            throw new LexingError("Unterminated string literal", _line, _column);
         }
 
         // Consume closing quote
@@ -513,12 +539,11 @@ public class Lexer
 
         if (IsAtEnd())
         {
-            AddToken(TokenType.Invalid, "Unterminated template string");
-            return;
+            throw new LexingError("Unterminated template literal", _line, _column);
         }
 
-        Advance();
-        AddToken(TokenType.String, value.ToString());
+        Advance(); // consume the closing `
+        AddToken(TokenType.TemplateLiteral, value.ToString());
     }
 
     private void ScanNumber()

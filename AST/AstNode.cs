@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Snip.AST;
 
 public abstract class AstNode
@@ -21,7 +19,7 @@ public class ProgramNode : AstNode
 
 public class LetStatementNode : DeclarationNode
 {
-    public IdentifierNode? Name { get; set; }
+    public PatternNode? Pattern { get; set; }
     public ExpressionNode? Value { get; set; }
     public string? TypeAnnotation { get; set; }
     public override string NodeType => "LetStatement";
@@ -29,7 +27,7 @@ public class LetStatementNode : DeclarationNode
 
 public class ConstStatementNode : DeclarationNode
 {
-    public IdentifierNode Name { get; set; }
+    public PatternNode Pattern { get; set; }
     public ExpressionNode Value { get; set; }
     public string? TypeAnnotation { get; set; }
     public override string NodeType => "ConstStatement";
@@ -37,10 +35,39 @@ public class ConstStatementNode : DeclarationNode
 
 public class VarStatementNode : DeclarationNode
 {
-    public IdentifierNode Name { get; set; }
+    public PatternNode Name { get; set; }
     public ExpressionNode? Value { get; set; }
     public string? TypeAnnotation { get; set; }
     public override string NodeType => "VarStatement";
+}
+
+public class ImportDeclaration : StatementNode
+{
+    public List<ImportSpecifier> Specifiers { get; set; } = new();
+    public string Source { get; set; }
+    public override string NodeType => "ImportDeclaration";
+}
+
+public class ExportDeclaration : StatementNode
+{
+    public StatementNode? Declaration { get; set; }
+    public List<ExportSpecifier> Specifiers { get; set; } = new();
+    public string? Source { get; set; }
+    public override string NodeType => "ExportDeclaration";
+}
+
+public class ImportSpecifier : AstNode
+{
+    public IdentifierNode Imported { get; set; }
+    public IdentifierNode Local { get; set; }
+    public override string NodeType => "ImportSpecifier";
+}
+
+public class ExportSpecifier : AstNode
+{
+    public IdentifierNode Local { get; set; }
+    public IdentifierNode Exported { get; set; }
+    public override string NodeType => "ExportSpecifier";
 }
 
 public class IfStatementNode : StatementNode
@@ -53,7 +80,7 @@ public class IfStatementNode : StatementNode
 
 public class WhileStatementNode : StatementNode
 {
-    public required ExpressionNode Condition { get; set; }
+    public ExpressionNode Condition { get; set; }
     public BlockStatementNode Body { get; set; }
     public override string NodeType => "WhileStatement";
 }
@@ -92,7 +119,7 @@ public class CaseNode : StatementNode
 public class FunctionDeclarationNode : DeclarationNode
 {
     public IdentifierNode Name { get; set; }
-    public List<ParameterNode> Parameters { get; set; } = new();
+    public List<AstNode> Parameters { get; set; } = new();
     public BlockStatementNode Body { get; set; }
     public string? ReturnType { get; set; }
     public bool IsAsync { get; set; }
@@ -128,7 +155,7 @@ public class ClassMemberNode : AstNode
 
 public class ReturnStatementNode : StatementNode
 {
-    public ExpressionNode? Argument { get; set; }
+    public ExpressionNode? Value { get; set; }
     public override string NodeType => "ReturnStatement";
 }
 
@@ -167,7 +194,7 @@ public class CatchClauseNode : AstNode
 
 public class BlockStatementNode : StatementNode
 {
-    public List<StatementNode> Statements { get; set; } = new();
+    public List<StatementNode> Body { get; set; } = new();
     public override string NodeType => "BlockStatement";
 }
 
@@ -183,16 +210,10 @@ public class EOF : StatementNode
 }
 
 
-public class IntegerLiteralNode(string value) : ExpressionNode
-{
-    public long Value { get; set; } = long.Parse(value);
-    public override string NodeType => "IntegerLiteral";
-}
-
-public class FloatLiteralNode(double value) : ExpressionNode
+public class NumberLiteralNode(double value) : ExpressionNode
 {
     public double Value { get; set; } = value;
-    public override string NodeType => "FloatLiteral";
+    public override string NodeType => "NumberLiteral";
 }
 
 public class StringLiteralNode(string value) : ExpressionNode
@@ -258,9 +279,9 @@ public class PowerExpressionNode(ExpressionNode left, ExpressionNode right) : Ex
 
 public class AssignmentExpressionNode : ExpressionNode
 {
-    public ExpressionNode Left { get; set; }
-    public string Operator { get; set; }
-    public ExpressionNode Right { get; set; }
+    public ExpressionNode? Left { get; set; }
+    public string? Operator { get; set; }
+    public ExpressionNode? Right { get; set; }
     public override string NodeType => "AssignmentExpression";
 }
 
@@ -308,11 +329,67 @@ public class ModuloExpressionNode(ExpressionNode l, ExpressionNode r) : Expressi
     public override string NodeType => "ModuloExpression";
 }
 
+public class EqualExpressionNode(ExpressionNode left, ExpressionNode right) : ExpressionNode
+{
+    public ExpressionNode Left { get; set; } = left;
+    public ExpressionNode Right { get; set; } = right;
+    public override string NodeType => "EqualExpression";
+}
+
+public class NotEqualExpressionNode(ExpressionNode left, ExpressionNode right) : ExpressionNode
+{
+    public ExpressionNode Left { get; set; } = left;
+    public ExpressionNode Right { get; set; } = right;
+    public override string NodeType => "NotEqualExpression";
+}
+
+public class LessThanExpressionNode(ExpressionNode left, ExpressionNode right) : ExpressionNode
+{
+    public ExpressionNode Left { get; set; } = left;
+    public ExpressionNode Right { get; set; } = right;
+    public override string NodeType => "LessThanExpression";
+}
+
+public class LessThanOrEqualExpressionNode(ExpressionNode left, ExpressionNode right) : ExpressionNode
+{
+    public ExpressionNode Left { get; set; } = left;
+    public ExpressionNode Right { get; set; } = right;
+    public override string NodeType => "LessThanOrEqualExpression";
+}
+
+public class GreaterThanExpressionNode(ExpressionNode left, ExpressionNode right) : ExpressionNode
+{
+    public ExpressionNode Left { get; set; } = left;
+    public ExpressionNode Right { get; set; } = right;
+    public override string NodeType => "GreaterThanExpression";
+}
+
+public class GreaterThanOrEqualExpressionNode(ExpressionNode left, ExpressionNode right) : ExpressionNode
+{
+    public ExpressionNode Left { get; set; } = left;
+    public ExpressionNode Right { get; set; } = right;
+    public override string NodeType => "GreaterThanOrEqualExpression";
+}
+
+public class AndExpressionNode(ExpressionNode left, ExpressionNode right) : ExpressionNode
+{
+    public ExpressionNode Left { get; set; } = left;
+    public ExpressionNode Right { get; set; } = right;
+    public override string NodeType => "AndExpression";
+}
+
+public class OrExpressionNode(ExpressionNode left, ExpressionNode right) : ExpressionNode
+{
+    public ExpressionNode Left { get; set; } = left;
+    public ExpressionNode Right { get; set; } = right;
+    public override string NodeType => "OrExpression";
+}
+
 
 public class FunctionExpressionNode : ExpressionNode
 {
     public IdentifierNode? Name { get; set; }
-    public List<ParameterNode> Parameters { get; set; } = new();
+    public List<AstNode> Parameters { get; set; } = new();
     public BlockStatementNode Body { get; set; }
     public string? ReturnType { get; set; }
     public bool IsAsync { get; set; }
@@ -321,7 +398,7 @@ public class FunctionExpressionNode : ExpressionNode
 
 public class ArrowFunctionExpressionNode : ExpressionNode
 {
-    public List<ParameterNode> Parameters { get; set; } = new();
+    public List<AstNode> Parameters { get; set; } = new();
     public AstNode Body { get; set; } // Can be BlockStatement or Expression
     public string? ReturnType { get; set; }
     public bool IsAsync { get; set; }
@@ -347,6 +424,7 @@ public class MemberExpressionNode(ExpressionNode obj, ExpressionNode p) : Expres
     public ExpressionNode Object { get; set; } = obj;
     public ExpressionNode Property { get; set; } = p;
     public bool Computed { get; set; }
+    public bool Optional { get; set; }
     public override string NodeType => "MemberExpression";
 }
 
@@ -356,9 +434,10 @@ public class ArrayExpressionNode (List<ExpressionNode> els) : ExpressionNode
     public override string NodeType => "ArrayExpression";
 }
 
-public class ObjectExpressionNode(List<PropertyNode> properties) : ExpressionNode
+public class ObjectExpressionNode(List<PropertyNode> properties, List<SpreadElementNode> spreads = null) : ExpressionNode
 {
     public List<PropertyNode> Properties { get; set; } = properties;
+    public List<SpreadElementNode> Spreads { get; set; } = spreads ?? new List<SpreadElementNode>();
     public override string NodeType => "ObjectExpression";
 }
 
@@ -385,16 +464,46 @@ public class TemplateElementNode : AstNode
     public override string NodeType => "TemplateElement";
 }
 
-public class SpreadElementNode : AstNode
+public class SpreadElementNode : ExpressionNode
 {
     public ExpressionNode Argument { get; set; }
     public override string NodeType => "SpreadElement";
 }
 
-public class RestElementNode : AstNode
+public class RestElementNode : PatternNode
 {
     public ExpressionNode Argument { get; set; }
     public override string NodeType => "RestElement";
+}
+
+public abstract class PatternNode : AstNode
+{
+}
+
+public class IdentifierPatternNode : PatternNode
+{
+    public string Name { get; set; }
+    public override string NodeType => "IdentifierPattern";
+}
+
+public class ArrayPatternNode : PatternNode
+{
+    public List<PatternNode?> Elements { get; set; } = new();
+    public override string NodeType => "ArrayPattern";
+}
+
+public class ObjectPatternNode : PatternNode
+{
+    public List<PropertyPatternNode> Properties { get; set; } = new();
+    public RestElementNode? Rest { get; set; }
+    public override string NodeType => "ObjectPattern";
+}
+
+public class PropertyPatternNode : AstNode
+{
+    public ExpressionNode? Key { get; set; }
+    public PatternNode Value { get; set; }
+    public override string NodeType => "PropertyPattern";
 }
 
 public class TypeAnnotationNode : AstNode
@@ -429,4 +538,81 @@ public class ExportDeclarationNode : StatementNode
 {
     public DeclarationNode Declaration { get; set; }
     public override string NodeType => "ExportDeclaration";
+}
+
+// Helper class for validating assignment expressions
+public static class AssignmentExpressionValidator
+{
+    private static readonly HashSet<string> ValidOperators = new()
+    {
+        "=", "+=", "-=", "*=", "/=", "%="
+    };
+
+    public static void ValidateAssignment(AssignmentExpressionNode node)
+    {
+        if (node == null) return;
+        
+        ValidateOperator(node.Operator);
+        ValidateOperands(node);
+    }
+
+    private static void ValidateOperator(string? op)
+    {
+        if (string.IsNullOrEmpty(op) || !ValidOperators.Contains(op))
+            throw new System.ArgumentException($"Unknown or invalid assignment operator: {op}");
+    }
+
+    private static void ValidateOperands(AssignmentExpressionNode assign)
+    {
+        if (assign.Left == null)
+            throw new System.ArgumentException("Assignment left operand cannot be null");
+        
+        if (assign.Right == null)
+            throw new System.ArgumentException("Assignment right operand cannot be null");
+        
+        ValidateExpression(assign.Left);
+        ValidateExpression(assign.Right);
+    }
+
+    private static void ValidateExpression(ExpressionNode expr)
+    {
+        if (expr == null) return;
+        
+        if (expr is AssignmentExpressionNode assignExpr)
+        {
+            ValidateAssignment(assignExpr);
+        }
+        else if (expr is CallExpressionNode callExpr)
+        {
+            ValidateCall(callExpr);
+        }
+        else if (expr is IdentifierNode identExpr)
+        {
+            ValidateIdentifier(identExpr);
+        }
+    }
+
+    private static void ValidateIdentifier(IdentifierNode ident)
+    {
+        if (string.IsNullOrEmpty(ident.Name))
+        {
+            throw new System.ArgumentException("Identifier cannot have empty name");
+        }
+        if (!char.IsLetter(ident.Name[0]))
+        {
+            throw new System.ArgumentException($"Identifier '{ident.Name}' must start with a letter, found '{ident.Name[0]}'");
+        }
+    }
+
+    private static void ValidateCall(CallExpressionNode call)
+    {
+        if (call == null) return;
+        
+        ValidateExpression(call.Callee);
+        
+        foreach (var arg in call.Arguments)
+        {
+            ValidateExpression(arg);
+        }
+    }
 }

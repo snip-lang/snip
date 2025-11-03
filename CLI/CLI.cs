@@ -1,18 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using snip.CLI;
 
 namespace Snip.CLI
 {
     public class CLI
     {
-        public string Parse(string[] args)
+        public string? Parse(string[] args)
         {
             if (args.Length == 0)
             {
-                throw new InvalidArgumentException("Missing arguments: snip filename");
+                return null; // No file provided, enter REPL mode
             }
 
             var file = args[0];
