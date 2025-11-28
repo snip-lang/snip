@@ -43,15 +43,19 @@ namespace Snip
                     env.InitializeBuiltins();
 
                     // Evaluate the program
-                    evaluator.Eval(program, env);
+                    var result = evaluator.Eval(program, env);
+                    if (result.Type == Snip.Evaluator.ValueType.Return)
+                    {
+                        return; // Exit successfully
+                    }
                 }
                 catch (Snip.Parser.ParsingError e)
                 {
-                    Console.WriteLine($"🔴 Parse Error: {e.Message}");
+                    Console.WriteLine($"Parse Error: {e.Message}");
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"💥 Runtime Error: {e.Message}");
+                    Console.WriteLine($"Runtime Error: {e.Message}");
                 }
             }
             else

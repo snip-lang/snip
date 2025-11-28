@@ -27,8 +27,9 @@ public class Parser
           { TokenType.Divide, 6 },
           { TokenType.Modulo, 6 },
           { TokenType.Power, 7 },
-          { TokenType.LeftParen, 9 }, // Function calls
-          { TokenType.Dot, 9 }, // Member access
+           { TokenType.LeftParen, 9 }, // Function calls
+           { TokenType.Dot, 9 }, // Member access
+           { TokenType.LeftBracket, 9 }, // Array access
           { TokenType.Equal, 3 },
           { TokenType.NotEqual, 3 },
            { TokenType.LessThan, 4 },
@@ -1689,8 +1690,14 @@ node.Cases = new List<CaseNode>();
         var node = new ImportDeclaration();
         _next(); // consume import
 
+        // Handle different import syntaxes:
+        // 1. import module
+        // 2. import { specifiers } from "module"
+        // 3. import from "module"
+        
         if (_peek()?.Type == TokenType.LeftBrace)
         {
+            // import { specifiers } from "module"
             _next(); // consume {
             while (_peek()?.Type != TokenType.RightBrace)
             {
@@ -1700,15 +1707,38 @@ node.Cases = new List<CaseNode>();
                     _next(); // consume ,
             }
             _next(); // consume }
+
+            if (_peek()?.Type != TokenType.From)
+                throw new ParsingError("Expected 'from' in import statement");
+            _next(); // consume from
+
+            if (_peek()?.Type != TokenType.String)
+                throw new ParsingError("Expected string after 'from'");
+            node.Source = ((StringLiteralNode)ParseStringExpression()).Value;
         }
-
-        if (_peek()?.Type != TokenType.From)
-            throw new ParsingError("Expected 'from' in import statement");
-        _next(); // consume from
-
-        if (_peek()?.Type != TokenType.String)
-            throw new ParsingError("Expected string after 'from'");
-        node.Source = ((StringLiteralNode)ParseStringExpression()).Value;
+        else if (_peek()?.Type == TokenType.From)
+        {
+            // import from "module"
+            _next(); // consume from
+            if (_peek()?.Type != TokenType.String)
+                throw new ParsingError("Expected string after 'from'");
+            node.Source = ((StringLiteralNode)ParseStringExpression()).Value;
+        }
+        else if (_peek()?.Type == TokenType.Identifier)
+        {
+            // import module (simple import)
+            var moduleName = ParseIdentifierExpression();
+            node.Source = moduleName.Name;
+            // Create a default import specifier
+            node.Specifiers.Add(new ImportSpecifier { 
+                Imported = new IdentifierNode("default"), 
+                Local = moduleName 
+            });
+        }
+        else
+        {
+            throw new ParsingError("Expected module name, '{', or 'from' after import");
+        }
 
         if (_peek()?.Type != TokenType.Semicolon)
             throw new ParsingError("Expected semicolon after import");

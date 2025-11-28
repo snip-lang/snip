@@ -301,6 +301,11 @@ public class Evaluator
             {
                 return result;
             }
+            // If a return value is thrown at the top level, return it
+            if (result.Type == ValueType.Return)
+            {
+                return ((ReturnValue)result.Data!).Value;
+            }
         }
         return result;
     }
@@ -496,7 +501,7 @@ public class Evaluator
             {
                 continue;
             }
-            if (result.Type == ValueType.Exception)
+            if (result.Type == ValueType.Return || result.Type == ValueType.Exception)
             {
                 return result;
             }
@@ -532,7 +537,7 @@ public class Evaluator
                 }
                 continue;
             }
-            if (result.Type == ValueType.Exception)
+            if (result.Type == ValueType.Return || result.Type == ValueType.Exception)
             {
                 return result;
             }
@@ -561,7 +566,7 @@ public class Evaluator
             {
                 continue;
             }
-            if (result.Type == ValueType.Exception)
+            if (result.Type == ValueType.Return || result.Type == ValueType.Exception)
             {
                 return result;
             }
@@ -999,7 +1004,6 @@ public class Evaluator
         }
 
         var obj = Eval(node.Object, env);
-        Console.WriteLine($"EvalMember: obj.Type = {obj.Type}, node.Computed = {node.Computed}, node.Property.NodeType = {node.Property.NodeType}");
 
         if (node.Optional && (obj.Type == ValueType.Null || obj.Type == ValueType.Undefined))
         {
@@ -1011,16 +1015,13 @@ public class Evaluator
             if (node.Computed)
             {
                 var indexValue = Eval(node.Property, env);
-                Console.WriteLine($"Array access: indexValue = {indexValue.Type} ({indexValue.Data})");
                 if (indexValue.Type == ValueType.Number)
                 {
                     var num = (double)indexValue.Data!;
                     var index = (int)num;
                     var arr = (List<Value>)obj.Data!;
-                    Console.WriteLine($"Array access: index = {index}, arr.Count = {arr.Count}");
                     if (index >= 0 && index < arr.Count)
                     {
-                        Console.WriteLine($"Array access: returning arr[{index}] = {arr[index].Type} ({arr[index].Data})");
                         return arr[index];
                     }
                     else
@@ -1045,11 +1046,10 @@ public class Evaluator
             }
         }
 
-        Console.WriteLine($"EvalMember: node.Computed = {node.Computed}, node.Property.NodeType = {node.Property.NodeType}");
         var propertyName = node.Computed
             ? ((string)Eval(node.Property, env).Data!)
             : ((IdentifierNode)node.Property).Name;
-
+        
         if (obj.Type == ValueType.Instance)
         {
             var instance = (ClassInstance)obj.Data!;

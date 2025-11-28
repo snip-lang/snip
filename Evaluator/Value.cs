@@ -172,15 +172,15 @@ public class Value
             ValueType.Boolean => ((bool?)Data ?? false) ? "true" : "false",
             ValueType.Null => "null",
             ValueType.Undefined => "undefined",
-            ValueType.Array => $"[{string.Join(", ", ((List<Value>)Data!).Select(v => v.ToString()))}]",
-            ValueType.Object => $"{{{string.Join(", ", ((Dictionary<string, Value>)Data!).Select(kv => $"\"{kv.Key}\": {kv.Value}"))}}}",
+            ValueType.Array => Data is List<Value> array ? $"[{string.Join(", ", array.Select(v => v.ToString()))}]" : "[]",
+            ValueType.Object => Data is Dictionary<string, Value> obj ? $"{{{string.Join(", ", obj.Select(kv => $"\"{kv.Key}\": {kv.Value}"))}}}" : "{}",
             ValueType.Function => "[Function]",
-            ValueType.Class => $"[class {(ClassValue)Data!}]",
-            ValueType.Instance => $"[object {(ClassInstance)Data!}]",
+            ValueType.Class => Data is ClassValue classValue ? $"[class {classValue.Name}]" : "[class]",
+            ValueType.Instance => Data is ClassInstance instance ? $"[object {instance.Class.Name}]" : "[object]",
             ValueType.Break => "[break]",
             ValueType.Continue => "[continue]",
-            ValueType.Exception => $"[exception {(ExceptionValue)Data!}]",
-            ValueType.NativeFunction => $"[native function {(NativeFunctionValue)Data!}]",
+            ValueType.Exception => Data is ExceptionValue exceptionValue ? $"[exception {exceptionValue.Value}]" : "[exception]",
+            ValueType.NativeFunction => Data is NativeFunctionValue nativeFunc ? $"[native function {nativeFunc.Name}]" : "[native function]",
             _ => "unknown"
         };
     }
