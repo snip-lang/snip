@@ -1,3 +1,4 @@
+<img width="733" height="913" alt="snip" src="https://github.com/user-attachments/assets/1d2ffd80-0f7b-4102-8483-cca74c58a126" />
 
 # Snip Lang
 
